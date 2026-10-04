@@ -11,6 +11,8 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  UserCog,
+  UserMinus,
   UserPlus,
   Users,
 } from 'lucide-react'
@@ -21,26 +23,39 @@ import { Badge } from '@/components/ui/Badge'
 import { Field, Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Avatar, EmptyState } from '@/components/ui/misc'
+import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu'
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/auth/AuthProvider'
 import { useUpdateTenant, type TenantUpdate } from '@/hooks/tenant'
-import { useCreateInvite, usePendingInvites, useRevokeInvite, useTeamMembers } from '@/hooks/team'
+import {
+  useCreateInvite,
+  usePendingInvites,
+  useRemoveMember,
+  useRevokeInvite,
+  useSetMemberRole,
+  useTeamMembers,
+  type TeamMember,
+} from '@/hooks/team'
 import { useMyPlanRequest, useRequestPlanChange } from '@/hooks/plan'
 import { uploadFile } from '@/lib/storage'
 import {
   APP_NAME,
   LEGAL_CONTACT_EMAIL,
   LEGAL_PATHS,
+  ROLE_HINT,
+  ROLE_LABEL,
   appUrl,
   planOrderFrom,
   planPriceLabel,
 } from '@/lib/constants'
 import { fmtDate } from '@/lib/format'
 import { errorMessage } from '@/lib/errors'
-import type { PlanCode } from '@/types/db'
+import { num } from '@/lib/format'
+import { usePermissions } from '@/lib/permissions'
+import type { MemberRole, PlanCode } from '@/types/db'
 
 /**
- * Configuración del negocio: datos, plan y quién más puede administrarlo.
+ * Configuración del colegio: datos, plan y equipo con sus roles.
  *
  * Lo que NO está aquí a propósito: la suspensión de la cuenta (la mueve solo el
  * super-admin, ver `tenants_guard`) y el cambio directo de plan — se SOLICITA,
@@ -49,13 +64,13 @@ import type { PlanCode } from '@/types/db'
 export function SettingsPage() {
   const { tenant } = useAuth()
 
-  // Sin negocio no hay nada que configurar. Pasa un instante al recargar, antes
+  // Sin colegio no hay nada que configurar. Pasa un instante al recargar, antes
   // de que el AuthProvider termine de cargar el contexto.
   if (!tenant) return null
 
   return (
     <div>
-      <PageHeader title="Configuración" description="Los datos de tu negocio y tu plan" />
+      <PageHeader title="Configuración" description="Los datos de tu colegio, tu plan y tu equipo" />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -76,7 +91,7 @@ export function SettingsPage() {
   )
 }
 
-/* ── Datos del negocio ────────────────────────────────────────────────────── */
+/* ── Datos del colegio ────────────────────────────────────────────────────── */
 
 /**
  * Monedas que ofrece el desplegable.
@@ -98,12 +113,16 @@ const CURRENCIES: { code: string; label: string }[] = [
 
 function BusinessCard() {
   const { tenant } = useAuth()
+  const { can } = usePermissions()
+  // Solo Dirección y Administración editan los datos que salen impresos en
+  // recibos y boletines. El resto del equipo los ve, pero sin formulario.
+  const canEdit = can('manageAcademics')
   const update = useUpdateTenant()
   const toast = useToast()
   const [form, setForm] = useState<TenantUpdate>({})
   const [uploading, setUploading] = useState(false)
 
-  // El formulario se rehidrata cuando cambia el negocio cargado (por ejemplo
+  // El formulario se rehidrata cuando cambia el colegio cargado (por ejemplo
   // tras el `refresh()` que hace la propia mutación).
   useEffect(() => {
     if (!tenant) return
@@ -114,6 +133,9 @@ function BusinessCard() {
       whatsapp: tenant.whatsapp ?? '',
       address: tenant.address ?? '',
       currency: tenant.currency,
+      legal_id: tenant.legal_id ?? '',
+      principal_name: tenant.principal_name ?? '',
+      receipt_footer: tenant.receipt_footer ?? '',
     })
   }, [tenant])
 
@@ -123,13 +145,22 @@ function BusinessCard() {
     e.preventDefault()
     const name = form.name?.trim()
     if (!name) {
-      toast.error('El negocio necesita un nombre.')
+      toast.error('El colegio necesita un nombre.')
       return
     }
     try {
       // No hace falta refrescar a mano: `useUpdateTenant` ya llama a `refresh()`
       // del AuthProvider, que es de donde la cabecera saca nombre y logo.
-      await update.mutateAsync({ id: tenant.id, ...form, name })
+      // Los vacíos se guardan como NULL: un RNC "" saldría como hueco en el recibo.
+      const clean = (v: string | null | undefined) => (v?.trim() ? v.trim() : null)
+      await update.mutateAsync({
+        id: tenant.id,
+        ...form,
+        name,
+        legal_id: clean(form.legal_id),
+        principal_name: clean(form.principal_name),
+        receipt_footer: clean(form.receipt_footer),
+      })
       toast.success('Cambios guardados')
     } catch (err) {
       toast.error(errorMessage(err, 'No se pudieron guardar los cambios'))
@@ -153,13 +184,14 @@ function BusinessCard() {
 
   return (
     <Card>
-      <CardHeader title="Datos del negocio" subtitle="Como aparece en tu cuenta" />
+      <CardHeader title="Datos del colegio" subtitle="Así aparece en recibos, boletines y en tu cuenta" />
       <CardBody>
         <div className="mb-5 flex items-center gap-4">
           <Avatar name={tenant.name} src={tenant.logo_url} size="lg" />
           {/* Un <label> con el input escondido dentro: el selector de archivos
               nativo no se puede estilar, y así el área visible es un botón
               normal de 44px que sí se puede tocar con el pulgar. */}
+          {canEdit && (
           <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
             <Upload className="h-4 w-4" />
             {uploading ? 'Subiendo…' : 'Cambiar logo'}
@@ -177,10 +209,14 @@ function BusinessCard() {
               }}
             />
           </label>
+          )}
         </div>
 
+        {/* `fieldset disabled` apaga todos los campos de una vez para quien
+            solo puede mirar, sin repetir la condición en cada input. */}
         <form onSubmit={save} className="space-y-4">
-          <Field label="Nombre del negocio" required>
+          <fieldset disabled={!canEdit} className="space-y-4">
+          <Field label="Nombre del colegio" required>
             <div className="relative">
               <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
@@ -239,11 +275,36 @@ function BusinessCard() {
             />
           </Field>
 
-          <div className="flex justify-end">
-            <Button type="submit" loading={update.isPending}>
-              Guardar cambios
-            </Button>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="RNC / registro" hint="Sale impreso en los recibos">
+              <Input
+                value={form.legal_id ?? ''}
+                onChange={(e) => setForm({ ...form, legal_id: e.target.value })}
+              />
+            </Field>
+            <Field label="Director/a" hint="Firma en los boletines">
+              <Input
+                value={form.principal_name ?? ''}
+                onChange={(e) => setForm({ ...form, principal_name: e.target.value })}
+              />
+            </Field>
           </div>
+
+          <Field label="Pie del recibo" hint="Cuenta bancaria, política de pagos o un mensaje para las familias">
+            <Input
+              value={form.receipt_footer ?? ''}
+              onChange={(e) => setForm({ ...form, receipt_footer: e.target.value })}
+            />
+          </Field>
+          </fieldset>
+
+          {canEdit && (
+            <div className="flex justify-end">
+              <Button type="submit" loading={update.isPending}>
+                Guardar cambios
+              </Button>
+            </div>
+          )}
         </form>
       </CardBody>
     </Card>
@@ -275,6 +336,12 @@ function PlanCard() {
           <span className="text-lg font-bold text-slate-800">{plan.name}</span>
           <span className="text-slate-400">· {planPriceLabel(plan)}</span>
         </div>
+
+        <p className="mt-1 text-sm text-slate-500">
+          {plan.maxStudents == null ? 'Estudiantes ilimitados' : `Hasta ${num(plan.maxStudents)} estudiantes activos`}
+          {' · '}
+          {plan.maxMembers == null ? 'usuarios ilimitados' : `${num(plan.maxMembers)} usuario(s)`}
+        </p>
 
         {subscription?.status === 'trial' && subscription.trial_ends_at && (
           <p className="mt-1 text-sm text-slate-500">
@@ -374,15 +441,33 @@ function ChangePlanCard() {
   )
 }
 
-/* ── Administradores ──────────────────────────────────────────────────────── */
+/* ── Equipo ───────────────────────────────────────────────────────────────── */
+
+/**
+ * Roles que se pueden repartir. 'owner' no está a propósito: la propiedad del
+ * colegio no viaja por invitación ni se regala con un clic (la base lo rechaza
+ * en `create_invite` y `set_member_role`, migración 0018).
+ */
+const ASSIGNABLE_ROLES: MemberRole[] = ['teacher', 'secretary', 'accountant', 'admin']
+
+const ROLE_TONE: Record<MemberRole, 'brand' | 'green' | 'amber' | 'slate'> = {
+  owner: 'brand',
+  admin: 'brand',
+  secretary: 'green',
+  teacher: 'amber',
+  accountant: 'slate',
+}
 
 function TeamCard() {
-  const { tenant, plan, isOwner } = useAuth()
+  const { tenant, plan, isOwner, user } = useAuth()
   const toast = useToast()
   const { data: members } = useTeamMembers()
   const { data: invites } = usePendingInvites()
   const createInvite = useCreateInvite()
   const revokeInvite = useRevokeInvite()
+  const setRole = useSetMemberRole()
+  const removeMember = useRemoveMember()
+  const [inviteRole, setInviteRole] = useState<MemberRole>('teacher')
 
   // `null` = ilimitado. Un plan de un solo usuario no puede invitar a nadie, y
   // `create_invite` lo rechaza con PLAN_LIMIT_MEMBERS.
@@ -390,15 +475,15 @@ function TeamCard() {
   const canInvite = multiUser && isOwner
   const registerUrl = appUrl('/registro')
 
-  const inviteText = (code: string) =>
-    `Te invito a administrar ${tenant?.name ?? 'mi negocio'} en ${APP_NAME}.\n` +
+  const inviteText = (code: string, role: MemberRole) =>
+    `Te invito a unirte a ${tenant?.name ?? 'mi colegio'} en ${APP_NAME} como ${ROLE_LABEL[role]}.\n` +
     `1) Crea tu cuenta aquí: ${registerUrl}\n` +
     `2) Elige "Unirme con código" y escribe: ${code}`
 
   const invite = async () => {
     try {
-      const code = await createInvite.mutateAsync()
-      toast.success(`Invitación creada (${code}). Compártela con esa persona.`)
+      const code = await createInvite.mutateAsync({ role: inviteRole })
+      toast.success(`Invitación de ${ROLE_LABEL[inviteRole]} creada (${code}). Compártela con esa persona.`)
     } catch (err) {
       // `errorMessage` limpia el prefijo PLAN_LIMIT_MEMBERS y deja la frase útil.
       toast.error(errorMessage(err, 'No se pudo crear la invitación'))
@@ -415,8 +500,8 @@ function TeamCard() {
     }
   }
 
-  const share = async (code: string) => {
-    const text = inviteText(code)
+  const share = async (code: string, role: MemberRole) => {
+    const text = inviteText(code, role)
     // La hoja nativa de compartir es lo que la gente usa en el teléfono (manda
     // por el chat que quiera). En escritorio casi nunca existe: se cae a copiar.
     if (navigator.share) {
@@ -446,17 +531,54 @@ function TeamCard() {
     }
   }
 
+  const changeRole = async (m: TeamMember, role: MemberRole) => {
+    try {
+      await setRole.mutateAsync({ userId: m.id, role })
+      toast.success(`${m.full_name ?? 'La persona'} ahora es ${ROLE_LABEL[role]}`)
+    } catch (err) {
+      toast.error(errorMessage(err, 'No se pudo cambiar el rol'))
+    }
+  }
+
+  const remove = async (m: TeamMember) => {
+    if (
+      !window.confirm(
+        `¿Quitar a ${m.full_name ?? 'esta persona'} del colegio? Perderá el acceso al instante; ` +
+          'su cuenta y lo que registró se conservan.',
+      )
+    )
+      return
+    try {
+      await removeMember.mutateAsync(m.id)
+      toast.success('Persona quitada del equipo')
+    } catch (err) {
+      toast.error(errorMessage(err, 'No se pudo quitar'))
+    }
+  }
+
+  /** Acciones sobre un miembro: solo el owner, nunca sobre sí mismo ni otro owner. */
+  const actionsFor = (m: TeamMember): ActionItem[] => [
+    ...ASSIGNABLE_ROLES.filter((r) => r !== m.role).map((r) => ({
+      label: `Cambiar a ${ROLE_LABEL[r]}`,
+      hint: ROLE_HINT[r],
+      icon: <UserCog className="h-4 w-4" />,
+      onClick: () => void changeRole(m, r),
+    })),
+    {
+      label: 'Quitar del colegio',
+      icon: <UserMinus className="h-4 w-4" />,
+      tone: 'danger' as const,
+      onClick: () => void remove(m),
+    },
+  ]
+
   return (
     <Card>
       <CardHeader
-        title="Administradores"
-        subtitle="Personas que pueden gestionar esta cuenta"
+        title="Equipo"
+        subtitle="Quién entra a ArreSchool y qué puede hacer cada rol"
         action={
-          canInvite ? (
-            <Button size="sm" onClick={() => void invite()} loading={createInvite.isPending}>
-              <UserPlus className="h-4 w-4" /> Invitar
-            </Button>
-          ) : !multiUser ? (
+          !multiUser ? (
             <Badge tone="brand">
               <Crown className="h-3.5 w-3.5" /> Plan superior
             </Badge>
@@ -465,86 +587,122 @@ function TeamCard() {
       />
       <CardBody className="space-y-4">
         <ul className="space-y-2">
-          {(members ?? []).map((m) => (
-            <li key={m.id} className="flex items-center gap-3">
-              <Avatar name={m.full_name} size="sm" />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">
-                {m.full_name ?? 'Sin nombre'}
-              </span>
-              <Badge tone={m.role === 'owner' ? 'brand' : 'slate'}>
-                {m.role === 'owner' ? 'Dueño' : 'Administrador'}
-              </Badge>
-            </li>
-          ))}
+          {(members ?? []).map((m) => {
+            const manageable = isOwner && m.id !== user?.id && m.role !== 'owner'
+            return (
+              <li key={m.id} className="flex items-center gap-3">
+                <Avatar name={m.full_name} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-800">
+                    {m.full_name ?? 'Sin nombre'}
+                    {m.id === user?.id && <span className="font-normal text-slate-400"> (tú)</span>}
+                  </p>
+                  <p className="truncate text-xs text-slate-400">{ROLE_HINT[m.role]}</p>
+                </div>
+                <Badge tone={ROLE_TONE[m.role]}>{ROLE_LABEL[m.role]}</Badge>
+                {manageable && (
+                  <ActionMenu
+                    title={m.full_name ?? 'Miembro del equipo'}
+                    label={`Opciones de ${m.full_name ?? 'este miembro'}`}
+                    items={actionsFor(m)}
+                  />
+                )}
+              </li>
+            )
+          })}
         </ul>
 
         {!multiUser ? (
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-500">
             <Lock className="h-5 w-5 shrink-0 text-slate-400" />
-            Tu plan es de un solo usuario. Cambia de plan para invitar a tu equipo.
+            Tu plan es de un solo usuario. Cambia de plan para invitar a docentes y secretaría.
           </div>
         ) : !isOwner ? (
-          // Un administrador ve quién más está, pero no los códigos: son
+          // El resto del equipo ve quién más está, pero no los códigos: son
           // secretos de tipo "quien lo tenga, entra" y la RLS solo se los
-          // devuelve a la dueña.
+          // devuelve a la Dirección.
           <p className="text-sm text-slate-500">
-            Solo el dueño de la cuenta puede invitar o revocar accesos.
+            Solo la Dirección (dueño de la cuenta) puede invitar, cambiar roles o quitar accesos.
           </p>
-        ) : invites && invites.length > 0 ? (
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Invitaciones pendientes
-            </p>
-            <ul className="space-y-2">
-              {invites.map((inv) => {
-                const expired = new Date(inv.expires_at).getTime() < Date.now()
-                return (
-                  <li key={inv.id} className="rounded-xl border border-slate-200 p-2.5">
-                    {/* Envuelve en dos filas a propósito: a 360px, el código y
-                        tres botones en línea dejan el código en cuatro letras. */}
-                    <div className="flex items-center gap-2">
-                      <code className="min-w-0 flex-1 truncate rounded-lg bg-slate-100 px-2 py-1 font-mono text-sm text-slate-700">
-                        {inv.code}
-                      </code>
-                      {expired && <Badge tone="red">Vencida</Badge>}
-                    </div>
-                    <div className="mt-2 flex items-center gap-1">
-                      <span className="min-w-0 flex-1 truncate text-xs text-slate-400">
-                        {expired ? 'Venció' : 'Vence'} el {fmtDate(inv.expires_at)}
-                      </span>
-                      <IconAction
-                        title="Copiar código"
-                        onClick={() => void copyCode(inv.code)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </IconAction>
-                      <IconAction title="Compartir invitación" onClick={() => void share(inv.code)}>
-                        <Share2 className="h-4 w-4" />
-                      </IconAction>
-                      <IconAction
-                        title="Revocar invitación"
-                        tone="danger"
-                        onClick={() => void revoke(inv.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </IconAction>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
         ) : (
-          <EmptyState
-            icon={<Users className="h-5 w-5" />}
-            title="Sin invitaciones pendientes"
-            description="Invita a otra persona para que administre contigo."
-            action={
-              <Button size="sm" onClick={() => void invite()} loading={createInvite.isPending}>
-                <UserPlus className="h-4 w-4" /> Crear invitación
-              </Button>
-            }
-          />
+          <>
+            {canInvite && (
+              <div className="rounded-xl border border-slate-200 p-3">
+                <p className="mb-2 text-sm font-semibold text-slate-800">Invitar a alguien</p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Select
+                    aria-label="Rol de la persona invitada"
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                    className="sm:flex-1"
+                  >
+                    {ASSIGNABLE_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {ROLE_LABEL[r]}
+                      </option>
+                    ))}
+                  </Select>
+                  <Button onClick={() => void invite()} loading={createInvite.isPending}>
+                    <UserPlus className="h-4 w-4" /> Crear invitación
+                  </Button>
+                </div>
+                <p className="mt-1.5 text-xs text-slate-500">{ROLE_HINT[inviteRole]}</p>
+              </div>
+            )}
+
+            {invites && invites.length > 0 ? (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Invitaciones pendientes
+                </p>
+                <ul className="space-y-2">
+                  {invites.map((inv) => {
+                    const expired = new Date(inv.expires_at).getTime() < Date.now()
+                    return (
+                      <li key={inv.id} className="rounded-xl border border-slate-200 p-2.5">
+                        {/* Envuelve en dos filas a propósito: a 360px, el código y
+                            tres botones en línea dejan el código en cuatro letras. */}
+                        <div className="flex items-center gap-2">
+                          <code className="min-w-0 flex-1 truncate rounded-lg bg-slate-100 px-2 py-1 font-mono text-sm text-slate-700">
+                            {inv.code}
+                          </code>
+                          <Badge tone={ROLE_TONE[inv.role]}>{ROLE_LABEL[inv.role]}</Badge>
+                          {expired && <Badge tone="red">Vencida</Badge>}
+                        </div>
+                        <div className="mt-2 flex items-center gap-1">
+                          <span className="min-w-0 flex-1 truncate text-xs text-slate-400">
+                            {expired ? 'Venció' : 'Vence'} el {fmtDate(inv.expires_at)}
+                          </span>
+                          <IconAction title="Copiar código" onClick={() => void copyCode(inv.code)}>
+                            <Copy className="h-4 w-4" />
+                          </IconAction>
+                          <IconAction
+                            title="Compartir invitación"
+                            onClick={() => void share(inv.code, inv.role)}
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </IconAction>
+                          <IconAction
+                            title="Revocar invitación"
+                            tone="danger"
+                            onClick={() => void revoke(inv.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </IconAction>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Users className="h-5 w-5" />}
+                title="Sin invitaciones pendientes"
+                description="Invita a docentes, secretaría o finanzas: cada rol ve solo lo suyo."
+              />
+            )}
+          </>
         )}
       </CardBody>
     </Card>

@@ -267,7 +267,7 @@ export default function App() {
             }
           />
           <Route
-            path="/admin/negocio/:id"
+            path="/admin/colegio/:id"
             element={
               <RequirePlatformAdmin>
                 <AdminTenantDetail />

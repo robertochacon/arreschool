@@ -53,18 +53,19 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <P>
-          {APP_NAME} es una <strong>herramienta para llevar los registros</strong> de un negocio:
-          los guardas, los organizas, ves sus totales y trabajas sobre ellos con tu equipo.{' '}
-          <Todo>describe aquí, en una frase, qué hace exactamente tu servicio</Todo>
+          {APP_NAME} es una <strong>plataforma de gestión escolar</strong>: el colegio lleva en ella
+          a sus estudiantes y familias, sus inscripciones, la asistencia, las evaluaciones y
+          boletines, los cargos y pagos de las familias, los comunicados y sus reportes, y trabaja
+          sobre todo ello con su equipo (dirección, secretaría, docentes y finanzas).
         </P>
         <Note>
           <strong>
             {APP_NAME} no es un banco, ni una entidad financiera, ni una plataforma de pagos, ni un
             asesor contable, fiscal o legal.
           </strong>{' '}
-          El dinero de tu negocio no pasa por la aplicación: lo que guardas aquí son anotaciones
-          tuyas. No custodiamos fondos, no verificamos lo que registras y no supervisamos tus
-          operaciones.
+          El dinero que pagan las familias no pasa por la aplicación: los pagos que se registran
+          aquí son anotaciones del colegio. No custodiamos fondos, no verificamos lo que se registra
+          y no supervisamos las operaciones del colegio.
         </Note>
         <Bullets>
           <Li>
@@ -72,13 +73,14 @@ const SECTIONS: LegalSection[] = [
             No es prueba de nada frente a un tercero ni garantiza que sea correcto.
           </Li>
           <Li>
-            Los documentos que genera la aplicación son de uso interno.{' '}
-            <strong>No son documentos fiscales</strong> salvo que tú los conviertas en tales por tus
-            propios medios.
+            Los recibos y boletines que genera la aplicación los emite el colegio.{' '}
+            <strong>Los recibos no son comprobantes fiscales</strong> salvo que el colegio los
+            convierta en tales por sus propios medios, y el contenido académico de los boletines es
+            responsabilidad del colegio.
           </Li>
           <Li>
-            Los acuerdos con tus clientes o proveedores son tuyos. No somos parte de ellos ni
-            respondemos por cómo se cumplan.
+            Los acuerdos del colegio con las familias (cuotas, becas, reglamentos) son del colegio.
+            No somos parte de ellos ni respondemos por cómo se cumplan.
           </Li>
         </Bullets>
       </>
@@ -100,9 +102,9 @@ const SECTIONS: LegalSection[] = [
           suya: si te pasa, escríbenos a <MailLink /> y la liberamos.
         </Li>
         <Li>
-          Con el plan que lo permita puedes invitar a otras personas a administrar tu cuenta. Ven los
-          mismos datos que tú y actúan en tu nombre; los códigos de invitación caducan solos y puedes
-          revocarlos cuando quieras.
+          Con el plan que lo permita, la Dirección puede invitar a su equipo con un rol (secretaría,
+          docente, finanzas o administración). Cada rol ve y hace solo lo suyo y actúa en nombre del
+          colegio; los códigos de invitación caducan solos y se pueden revocar en cualquier momento.
         </Li>
         <Li>
           Una cuenta es de una persona. Compartir credenciales entre varias, en lugar de invitarlas,
@@ -122,12 +124,14 @@ const SECTIONS: LegalSection[] = [
         </P>
         <Bullets>
           <Li>
-            Tener derecho a tratarlos. Si incluyen datos de otras personas, a contar con su permiso
-            y a decirles que los llevas en esta aplicación.
+            Tener derecho a tratarlos. En particular, <strong>contar con la autorización de los
+            padres, madres o tutores</strong> para registrar los datos de sus hijos e hijas
+            —incluidas fotos y datos de salud— y haberles informado de que el colegio usa{' '}
+            {APP_NAME}.
           </Li>
           <Li>
             Anotar solo lo necesario. Los campos de texto son libres: no los uses para información
-            sensible que no haga falta para tu negocio.
+            sensible que no haga falta para tu colegio.
           </Li>
           <Li>
             Atender las solicitudes de esas personas sobre sus propios datos. Frente a ellas, el
@@ -148,7 +152,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <P>
-          Hay un plan gratuito con topes —de registros y de personas en el equipo— y planes de pago
+          Hay un plan gratuito con topes —de estudiantes activos y de personas en el equipo— y planes de pago
           que los levantan y añaden funciones. Las cuentas nuevas empiezan con un periodo de prueba;
           al terminar, la cuenta sigue funcionando con los topes del plan gratuito.
         </P>
@@ -163,8 +167,9 @@ const SECTIONS: LegalSection[] = [
             no deja crear más hasta que subas de plan o liberes espacio.
           </Li>
           <Li>
-            Archivar y volver a activar un registro no sirve para saltarse el tope: al reactivarlo se
-            revisa el límite otra vez.
+            Solo cuentan los estudiantes <strong>activos</strong>: egresados y retirados no ocupan
+            cupo. Volver a activar a un estudiante revisa el límite otra vez, así que no sirve para
+            saltarse el tope.
           </Li>
           <Li>
             Bajar de plan con más contenido del que permite el nuevo tope no borra nada, pero impide
@@ -232,10 +237,10 @@ const SECTIONS: LegalSection[] = [
           Usar {APP_NAME} para cualquier actividad ilegal, para captar dinero del público sin
           autorización o para blanquear fondos.
         </Li>
-        <Li>Guardar datos de personas que no te autorizaron, o usarlos para algo distinto de tu negocio.</Li>
-        <Li>Suplantar a otra persona o negocio, o dar datos falsos para abrir una cuenta.</Li>
+        <Li>Guardar datos de personas que no te autorizaron, o usarlos para algo distinto de tu colegio.</Li>
+        <Li>Suplantar a otra persona o colegio, o dar datos falsos para abrir una cuenta.</Li>
         <Li>
-          Intentar acceder a datos de otro negocio, romper la seguridad, hacer ingeniería inversa,
+          Intentar acceder a datos de otro colegio, romper la seguridad, hacer ingeniería inversa,
           extraer datos de forma masiva o sobrecargar el servicio a propósito.
         </Li>
         <Li>Revender, alquilar o dar acceso a {APP_NAME} como si fuera tuyo.</Li>
@@ -282,14 +287,15 @@ const SECTIONS: LegalSection[] = [
           el correo de la cuenta.
         </Li>
         <Li>
-          Eliminar borra los registros, la bitácora, los avisos y los archivos subidos.{' '}
+          Eliminar borra estudiantes, familias, el historial académico, los cargos y pagos, la
+          bitácora, los avisos y los archivos subidos.{' '}
           <strong>No se puede deshacer</strong> y el tiempo que quedara de un plan pagado se pierde.
         </Li>
         <Li>
           Antes de pedirlo, descarga lo que quieras conservar: después no podemos recuperarlo.
         </Li>
         <Li>
-          Guardamos una constancia mínima del borrado (fecha, nombre del negocio, correo del dueño y
+          Guardamos una constancia mínima del borrado (fecha, nombre del colegio, correo del dueño y
           conteos) por obligaciones contables y para prevenir fraudes, como se explica en la{' '}
           <DocLink to={LEGAL_PATHS.privacy}>Política de Privacidad</DocLink>.
         </Li>
@@ -361,7 +367,7 @@ const SECTIONS: LegalSection[] = [
         </P>
         <Bullets>
           <Li>
-            Lo que ocurra con tu negocio: pérdidas, faltantes, acuerdos incumplidos o desacuerdos con
+            Lo que ocurra con tu colegio: pérdidas, faltantes, acuerdos incumplidos o desacuerdos con
             terceros.
           </Li>
           <Li>
@@ -417,8 +423,8 @@ export function TermsPage() {
         <>
           Estas son las reglas de uso de {APP_NAME}. Lo más importante en dos líneas:{' '}
           <strong>
-            la aplicación guarda y organiza los registros de tu negocio, pero no maneja tu dinero ni
-            responde por lo que anotes en ella
+            la aplicación guarda y organiza la información de tu colegio, pero no maneja el dinero de
+            las familias ni responde por lo que se anote en ella
           </strong>
           , y los datos que cargas siguen siendo tuyos. Lo demás está detallado abajo.
         </>

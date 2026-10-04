@@ -30,11 +30,13 @@
 --
 -- 9 bytes aleatorios en hexadecimal = 18 caracteres, 72 bits de entropía: se
 -- dicta por teléfono sin dolor y adivinarlo a fuerza bruta no es una opción.
--- gen_random_bytes() viene de pgcrypto, que se instala en 0001.
+-- gen_random_bytes() viene de pgcrypto (0001). Va CALIFICADA con su esquema:
+-- en Supabase la extensión vive en `extensions`, que no está en el search_path
+-- de las migraciones, y sin calificar `db push` falla con 42883.
 create table if not exists public.tenant_invites (
   id          uuid primary key default gen_random_uuid(),
   tenant_id   uuid not null references public.tenants (id) on delete cascade,
-  code        text not null unique default encode(gen_random_bytes(9), 'hex'),
+  code        text not null unique default encode(extensions.gen_random_bytes(9), 'hex'),
   -- Correo de destino: informativo (a quién se le mandó). No se valida contra
   -- el correo de quien canjea, para no romper el caso "me registré con otro".
   email       text,

@@ -412,7 +412,7 @@ Reglas copiadas de MisanRD y obligatorias:
   /login /registro /recuperar              PublicOnly
   /restablecer                             sin guard (llega con sesión de recuperación)
   /bienvenida                              OnboardingGuard
-  /admin  /admin/negocio/:id               RequirePlatformAdmin
+  /admin  /admin/colegio/:id               RequirePlatformAdmin
   ProtectedLayout:
     index → DashboardPage
     /items  /items/:id(no)  → ItemsPage
@@ -622,7 +622,7 @@ docs    README.md CLAUDE.md ARQUITECTURA.md (este archivo)
 
 ---
 
-## 14. Dominio escolar (migraciones 0012–0018)
+## 14. Dominio escolar (migraciones 0012–0019)
 
 ### 14.1 Principios (no negociables)
 
@@ -705,6 +705,7 @@ dashboard_summary() → DashboardSummary (finance = null sin handle_finance)
 report_attendance(p_from, p_to, p_section) / report_income(p_from, p_to) / report_enrollment(p_period)   INVOKER
 list_team_members() / set_member_role(p_user, p_role) / remove_member(p_user)   (0018)
 create_invite(p_role, p_email)  — rechaza 'owner' (0018)
+tenants_update (0019): solo owner/admin editan los datos del colegio
 ```
 Plan: `plan_settings.max_students` (antes max_items) cuenta estudiantes
 ACTIVOS (`PLAN_LIMIT_STUDENTS`); `admin_update_plan(..., p_max_students, ...)`.
@@ -741,7 +742,7 @@ para que se ejecuten en orden). El guard de sesión sigue DENTRO del
 
 ### 14.6 Pruebas
 
-`npm run test:db` aplica 0001–0018 en PGlite con un stub de Supabase
+`npm run test:db` aplica 0001–0019 en PGlite con un stub de Supabase
 (`supabase/tests/supabase-stub.sql`) y ejecuta
 `supabase/tests/isolation.test.mjs`: aislamiento entre dos colegios, roles,
 finanzas, boletines, cierre de año, topes de plan y purga.

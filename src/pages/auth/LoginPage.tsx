@@ -52,8 +52,8 @@ export function LoginPage() {
       )
       return
     }
-    // Carga el perfil/negocio ANTES de navegar: si no, el guard ve la sesión sin
-    // perfil y manda a los primeros pasos a quien ya tiene negocio.
+    // Carga el perfil/colegio ANTES de navegar: si no, el guard ve la sesión sin
+    // perfil y manda a los primeros pasos a quien ya tiene colegio.
     await refresh()
     navigate('/')
   })

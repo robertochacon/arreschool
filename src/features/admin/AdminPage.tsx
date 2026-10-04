@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  ArrowRight, Ban, Building2, Check, Eye, LogOut, Package, Play, RefreshCw, Search,
+  ArrowRight, Ban, Building2, Check, Eye, GraduationCap, LogOut, Play, RefreshCw, Search,
   ShieldCheck, ShieldPlus, SlidersHorizontal, Trash2, UserRound, Users, Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
@@ -33,9 +33,9 @@ import { PlansCard } from './PlansCard'
 /**
  * Panel de plataforma: la vista del super-admin sobre TODAS las cuentas.
  *
- * Vive fuera de `Layout` a propósito. Un super-admin no tiene negocio propio
+ * Vive fuera de `Layout` a propósito. Un super-admin no tiene colegio propio
  * (`auth_tenant_id()` es null, requisito de las políticas cross-tenant), así que
- * la navegación de la app —Items, Configuración, Perfil— no le lleva a ninguna
+ * la navegación de la app —Estudiantes, Finanzas, Configuración— no le lleva a ninguna
  * parte: esta pantalla trae su propio cascarón.
  */
 
@@ -50,9 +50,9 @@ const SUB_STATUSES: SubscriptionStatus[] = ['trial', 'active', 'past_due', 'canc
 const TENANTS_PAGE_SIZE = 10
 const REQUESTS_PAGE_SIZE = 5
 
-type SectionId = 'resumen' | 'negocios' | 'planes' | 'equipo'
+type SectionId = 'resumen' | 'colegios' | 'planes' | 'equipo'
 const SECTIONS: { value: SectionId; label: string }[] = [
-  { value: 'resumen', label: 'Resumen' }, { value: 'negocios', label: 'Negocios' },
+  { value: 'resumen', label: 'Resumen' }, { value: 'colegios', label: 'Colegios' },
   { value: 'planes', label: 'Planes' }, { value: 'equipo', label: 'Super-admins' },
 ]
 
@@ -73,7 +73,7 @@ export function AdminPage() {
   const [planForId, setPlanForId] = useState<string | null>(null)
   const [deleteFor, setDeleteFor] = useState<AdminTenantRow | null>(null)
 
-  // La sección va en la URL (?s=negocios): así el botón «atrás» funciona y se
+  // La sección va en la URL (?s=colegios): así el botón «atrás» funciona y se
   // puede compartir el enlace directo a una pestaña.
   const [params, setParams] = useSearchParams()
   const section = (params.get('s') ?? 'resumen') as SectionId
@@ -104,7 +104,7 @@ export function AdminPage() {
     if (!window.confirm(ask)) return
     try {
       await setSuspended.mutateAsync({ tenant: t.id, suspended: next })
-      toast.success(next ? 'Negocio suspendido.' : 'Negocio reactivado.')
+      toast.success(next ? 'Colegio suspendido.' : 'Colegio reactivado.')
     } catch (err) {
       toast.error(errorMessage(err, 'No se pudo cambiar el estado.'))
     }
@@ -163,13 +163,13 @@ export function AdminPage() {
           {section === 'resumen' && (
             <>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <StatCard label="Negocios" value={ov?.tenants ?? '—'} icon={<Building2 className="h-5 w-5" />} tone="brand" />
+                <StatCard label="Colegios" value={ov?.tenants ?? '—'} icon={<Building2 className="h-5 w-5" />} tone="brand" />
                 <StatCard label="Usuarios" value={ov?.members ?? '—'} icon={<UserRound className="h-5 w-5" />} tone="slate" />
-                <StatCard label="Items" value={ov?.items ?? '—'} icon={<Package className="h-5 w-5" />} tone="slate" />
-                <StatCard label="Items activos" value={ov?.active_items ?? '—'} icon={<Check className="h-5 w-5" />} tone="green" />
-                {/* Suma bruta de `items.amount`: si conviven negocios con monedas
+                <StatCard label="Estudiantes" value={ov?.students ?? '—'} icon={<GraduationCap className="h-5 w-5" />} tone="slate" />
+                <StatCard label="Estudiantes activos" value={ov?.active_students ?? '—'} icon={<Check className="h-5 w-5" />} tone="green" />
+                {/* Suma bruta de pagos válidos: si conviven colegios con monedas
                     distintas es una referencia de volumen, no una caja. */}
-                <StatCard label="Monto en items" value={ov ? money(ov.amount_total) : '—'} icon={<Wallet className="h-5 w-5" />} tone="accent" />
+                <StatCard label="Cobrado en ArreSchool Pay" value={ov ? money(ov.collected_total) : '—'} icon={<Wallet className="h-5 w-5" />} tone="accent" />
                 <StatCard label="Super-admins" value={ov?.platform_admins ?? '—'} icon={<ShieldCheck className="h-5 w-5" />} tone="slate" />
               </div>
 
@@ -185,20 +185,20 @@ export function AdminPage() {
             </>
           )}
 
-          {section === 'negocios' && (
+          {section === 'colegios' && (
             <>
               <div className="relative max-w-sm">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input value={query} onChange={(e) => setQuery(e.target.value)} className="pl-9"
-                  placeholder="Buscar por negocio, dueño o correo…" />
+                  placeholder="Buscar por colegio, dueño o correo…" />
               </div>
               <TenantsTable
                 rows={rows} query={query} plans={plans} loading={tenants.isLoading}
                 error={tenants.isError ? tenants.error : null}
-                onDetail={(id) => navigate(`/admin/negocio/${id}`)}
+                onDetail={(id) => navigate(`/admin/colegio/${id}`)}
                 // Los usuarios se gestionan en el detalle y no en un modal aquí:
                 // una sola pantalla para roles, bloqueos y bajas.
-                onMembers={(id) => navigate(`/admin/negocio/${id}?ir=miembros`)}
+                onMembers={(id) => navigate(`/admin/colegio/${id}?ir=miembros`)}
                 onPlan={setPlanForId} onToggleSuspend={toggleSuspend} onDelete={setDeleteFor}
               />
               <PurgeLogCard />
@@ -235,7 +235,7 @@ function PlanRequestsCard({
       <Card className="mt-6">
         <CardBody>
           <EmptyState icon={<Check className="h-5 w-5" />} title="Sin solicitudes pendientes"
-            description="Cuando un negocio pida cambiar de plan, aparecerá aquí." />
+            description="Cuando un colegio pida cambiar de plan, aparecerá aquí." />
         </CardBody>
       </Card>
     )
@@ -272,7 +272,7 @@ function PlanRequestsCard({
   )
 }
 
-// ── Negocios ─────────────────────────────────────────────────────────────────
+// ── Colegios ─────────────────────────────────────────────────────────────────
 
 function TenantsTable({
   rows, loading, error, query, plans, onDetail, onMembers, onPlan, onToggleSuspend, onDelete,
@@ -301,9 +301,9 @@ function TenantsTable({
     { label: 'Usuarios', icon: <Users className="h-4 w-4" />, hint: 'Roles, bloqueo de acceso y bajas', onClick: () => onMembers(t.id) },
     { label: 'Cambiar plan', icon: <SlidersHorizontal className="h-4 w-4" />, onClick: () => onPlan(t.id) },
     t.suspended
-      ? { label: 'Reactivar negocio', icon: <Play className="h-4 w-4" />, tone: 'success', onClick: () => onToggleSuspend(t) }
-      : { label: 'Suspender negocio', icon: <Ban className="h-4 w-4" />, tone: 'danger', hint: 'Lo deja en solo lectura', onClick: () => onToggleSuspend(t) },
-    { label: 'Eliminar negocio', icon: <Trash2 className="h-4 w-4" />, tone: 'danger', hint: 'Borra todos sus datos, sin vuelta atrás', onClick: () => onDelete(t) },
+      ? { label: 'Reactivar colegio', icon: <Play className="h-4 w-4" />, tone: 'success', onClick: () => onToggleSuspend(t) }
+      : { label: 'Suspender colegio', icon: <Ban className="h-4 w-4" />, tone: 'danger', hint: 'Lo deja en solo lectura', onClick: () => onToggleSuspend(t) },
+    { label: 'Eliminar colegio', icon: <Trash2 className="h-4 w-4" />, tone: 'danger', hint: 'Borra todos sus datos, sin vuelta atrás', onClick: () => onDelete(t) },
   ]
 
   const statusBadge = (t: AdminTenantRow) => (
@@ -316,12 +316,12 @@ function TenantsTable({
   return (
     <Card className="mt-4">
       {loading ? (
-        <PageLoader label="Cargando negocios…" />
+        <PageLoader label="Cargando colegios…" />
       ) : error ? (
-        <p className="p-6 text-center text-sm text-red-600">{errorMessage(error, 'No se pudieron cargar los negocios.')}</p>
+        <p className="p-6 text-center text-sm text-red-600">{errorMessage(error, 'No se pudieron cargar los colegios.')}</p>
       ) : rows.length === 0 ? (
         <EmptyState className="m-5" icon={<Building2 className="h-6 w-6" />}
-          title={query ? 'Sin resultados' : 'Aún no hay negocios'}
+          title={query ? 'Sin resultados' : 'Aún no hay colegios'}
           description={query ? 'Prueba con otro término.' : 'Cuando alguien cree su cuenta, aparecerá aquí.'} />
       ) : (
         <>
@@ -331,12 +331,12 @@ function TenantsTable({
             <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-4 py-3 font-medium">Negocio</th>
+                  <th className="px-4 py-3 font-medium">Colegio</th>
                   <th className="px-4 py-3 font-medium">Dueño</th>
                   <th className="px-4 py-3 font-medium">Plan</th>
-                  <th className="px-4 py-3 text-right font-medium">Items</th>
+                  <th className="px-4 py-3 text-right font-medium">Estudiantes</th>
                   <th className="px-4 py-3 text-right font-medium">Usuarios</th>
-                  <th className="px-4 py-3 text-right font-medium">Monto</th>
+                  <th className="px-4 py-3 text-right font-medium">Cobrado</th>
                   <th className="px-4 py-3 font-medium">Alta</th>
                   <th className="px-4 py-3 text-right font-medium">Acciones</th>
                 </tr>
@@ -357,9 +357,12 @@ function TenantsTable({
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">{planBadge(t)}{statusBadge(t)}</div>
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-slate-600">{num(t.items)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-600">
+                      {num(t.active_students)}
+                      {t.students > t.active_students && <span className="block text-xs text-slate-400">{num(t.students)} en total</span>}
+                    </td>
                     <td className="px-4 py-3 text-right tabular-nums text-slate-600">{num(t.members)}</td>
-                    <td className="px-4 py-3 text-right font-medium tabular-nums text-slate-800">{money(t.amount_total, t.currency)}</td>
+                    <td className="px-4 py-3 text-right font-medium tabular-nums text-slate-800">{money(t.collected_total, t.currency)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-slate-500">{fmtDate(t.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end">
@@ -385,15 +388,15 @@ function TenantsTable({
               >
                 <DataFields>
                   {/* El dueño va etiquetado y a dos columnas: sin la cabecera de
-                      la tabla, un nombre suelto bajo el del negocio se confunde
+                      la tabla, un nombre suelto bajo el del colegio se confunde
                       con el teléfono de arriba. */}
                   <DataField label="Dueño" wrap className="col-span-2">
                     {t.owner_name ?? '—'}
                     {t.owner_email && <span className="block break-all text-xs font-normal text-slate-400">{t.owner_email}</span>}
                   </DataField>
-                  <DataField label="Items">{num(t.items)}</DataField>
+                  <DataField label="Estudiantes activos">{num(t.active_students)}</DataField>
                   <DataField label="Usuarios">{num(t.members)}</DataField>
-                  <DataField label="Monto">{money(t.amount_total, t.currency)}</DataField>
+                  <DataField label="Cobrado">{money(t.collected_total, t.currency)}</DataField>
                   <DataField label="Alta">{fmtDate(t.created_at)}</DataField>
                 </DataFields>
               </DataRow>
@@ -401,15 +404,15 @@ function TenantsTable({
           </DataList>
         </>
       )}
-      <Pagination page={safePage} pageSize={TENANTS_PAGE_SIZE} total={rows.length} onPage={setPage} label="negocios" />
+      <Pagination page={safePage} pageSize={TENANTS_PAGE_SIZE} total={rows.length} onPage={setPage} label="colegios" />
     </Card>
   )
 }
 
 /**
- * Bitácora de negocios eliminados.
+ * Bitácora de colegios eliminados.
  *
- * Es lo único que queda de un negocio borrado —sus `audit_logs` se fueron con
+ * Es lo único que queda de un colegio borrado —sus `audit_logs` se fueron con
  * él—, y guarda lo que ya no se puede reconstruir: quién lo borró, cuándo y
  * cuánto había dentro. Se oculta mientras no haya ninguno.
  */
@@ -419,7 +422,7 @@ function PurgeLogCard() {
 
   return (
     <Card className="mt-4">
-      <CardHeader title="Negocios eliminados"
+      <CardHeader title="Colegios eliminados"
         subtitle={`${rows.length === 10 ? 'Últimos 10' : `${rows.length} en total`} · el rastro del borrado, no los datos`} />
       <ul className="divide-y divide-slate-50">
         {rows.map((r) => (
@@ -432,7 +435,7 @@ function PurgeLogCard() {
             <p className="mt-0.5 break-all text-xs text-slate-400">
               {r.owner_email ?? 'sin dueño'}
               {r.deleted_by_email ? ` · borrado por ${r.deleted_by_email}` : ''}
-              {` · ${num(r.counts?.items ?? 0)} items · ${num(r.counts?.profiles ?? 0)} usuarios`}
+              {` · ${num(r.counts?.students ?? 0)} estudiantes · ${num(r.counts?.payments ?? 0)} pagos · ${num(r.counts?.profiles ?? 0)} usuarios`}
             </p>
           </li>
         ))}
@@ -441,7 +444,7 @@ function PurgeLogCard() {
   )
 }
 
-// ── Suscripción de un negocio ────────────────────────────────────────────────
+// ── Suscripción de un colegio ────────────────────────────────────────────────
 
 function ChangePlanModal({ tenant, onClose }: { tenant: AdminTenantRow | null; onClose: () => void }) {
   const { plans } = useAuth()
@@ -450,9 +453,9 @@ function ChangePlanModal({ tenant, onClose }: { tenant: AdminTenantRow | null; o
   const [plan, setPlan] = useState<PlanCode>('basic')
   const [status, setStatus] = useState<SubscriptionStatus>('active')
 
-  // Se sincroniza al abrir con OTRO negocio, durante el render y no en un
+  // Se sincroniza al abrir con OTRO colegio, durante el render y no en un
   // useEffect: así no hay un fotograma con los valores del anterior. Al cerrar
-  // se olvida la clave, para que reabrir el MISMO negocio relea su plan actual.
+  // se olvida la clave, para que reabrir el MISMO colegio relea su plan actual.
   const [syncedKey, setSyncedKey] = useState('')
   const close = () => {
     setSyncedKey('')
@@ -544,7 +547,7 @@ function SuperAdminsCard() {
 
   return (
     <Card>
-      <CardHeader title="Super-admins de plataforma" subtitle="Cuentas con acceso a este panel (sin negocio propio)" />
+      <CardHeader title="Super-admins de plataforma" subtitle="Cuentas con acceso a este panel (sin colegio propio)" />
       <CardBody className="space-y-4">
         {/* Sin paginar a propósito: son un puñado de cuentas, y una lista de tres
             con paginador debajo se lee como si faltara algo. */}
@@ -575,10 +578,10 @@ function SuperAdminsCard() {
           </Button>
         </form>
         {/* La restricción no es capricho de la UI: las políticas cross-tenant
-            piden `auth_tenant_id() is null`, así que un super-admin con negocio
+            piden `auth_tenant_id() is null`, así que un super-admin con colegio
             propio no vería nada aquí dentro. */}
         <p className="text-xs text-slate-500">
-          Tiene que ser una cuenta que ya exista y que NO pertenezca a ningún negocio. Siempre queda
+          Tiene que ser una cuenta que ya exista y que NO pertenezca a ningún colegio. Siempre queda
           al menos un super-admin: la base rechaza quitar al último.
         </p>
       </CardBody>

@@ -3,17 +3,19 @@ import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   BarChart3,
+  CalendarCheck,
   Check,
   CheckCircle2,
   ChevronDown,
-  History,
-  LayoutDashboard,
+  GraduationCap,
+  HeartHandshake,
   Menu,
-  Package,
   PlayCircle,
   ShieldCheck,
   Smartphone,
+  Star,
   Users,
+  Wallet,
   WifiOff,
   X,
 } from 'lucide-react'
@@ -22,7 +24,7 @@ import { money } from '@/lib/format'
 import {
   APP_NAME,
   APP_TAGLINE,
-  ITEM_STATUS_LABEL,
+  ATTENDANCE_STATUS_LABEL,
   LEGAL_CONTACT_EMAIL,
   LEGAL_PATHS,
   PLAN_PRICE_UNIT,
@@ -31,18 +33,20 @@ import {
   type PlanInfo,
 } from '@/lib/constants'
 import { Wordmark } from '@/components/Logo'
-import type { PlanCode } from '@/types/db'
+import type { AttendanceStatus, PlanCode } from '@/types/db'
 
 /**
- * Página pública de marketing: es lo que ve en `/` quien NO tiene sesión
+ * Página pública de ArreSchool: es lo que ve en `/` quien NO tiene sesión
  * (App.tsx la monta desde el guard, sin redirigir).
  *
- * Todo el contenido es GENÉRICO y hay que reescribirlo al adoptar el starter.
- * Lo que sí conviene conservar es la estructura: gancho → prueba → funciones →
- * cómo se usa → precios → dudas → llamada final. Y una regla: nada de cifras
- * inventadas («+1.000 negocios confían en nosotros») ni testimonios de mentira;
- * mientras no haya clientela real, la franja de confianza dice hechos del
- * producto, que sí son verificables.
+ * Público: la directora o el dueño de un colegio pequeño —hoy, de educación
+ * inicial— que lleva matrícula, asistencia y cobros en libretas y hojas de
+ * cálculo. Estructura: gancho → prueba → las cuatro áreas → los productos →
+ * cómo se empieza → precios → dudas → llamada final.
+ *
+ * Regla que se mantiene del starter: nada de cifras inventadas («+500 colegios
+ * confían en nosotros») ni testimonios de mentira. Mientras no haya clientela
+ * real, la franja de confianza dice hechos del producto, que sí son verificables.
  */
 export function LandingPage() {
   return (
@@ -51,6 +55,7 @@ export function LandingPage() {
       <Hero />
       <TrustBar />
       <Features />
+      <Products />
       <HowItWorks />
       <Pricing />
       <Faq />
@@ -137,7 +142,8 @@ function SectionHeading({
 
 /** Secciones del menú. Las comparten la barra y el panel del teléfono. */
 const NAV_LINKS = [
-  { id: 'funciones', label: 'Funciones' },
+  { id: 'funciones', label: 'Áreas' },
+  { id: 'productos', label: 'Productos' },
   { id: 'proceso', label: 'Cómo funciona' },
   { id: 'precios', label: 'Precios' },
   { id: 'faq', label: 'Preguntas' },
@@ -281,11 +287,12 @@ function Hero() {
             {APP_TAGLINE}
           </span>
           <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-brand-950 sm:text-5xl lg:text-6xl">
-            Todo tu negocio, <span className="text-brand-600">en un solo lugar</span>.
+            Todo tu colegio, <span className="text-brand-600">en una sola plataforma</span>.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-slate-600 lg:mx-0">
-            {APP_NAME} reúne tus registros, tu equipo y tus números en una sola aplicación.
-            Se abre en el teléfono y sigue funcionando cuando se cae la señal.
+            {APP_NAME} reúne estudiantes, familias, asistencia, evaluaciones y cobros en una
+            sola aplicación. Pensada para educación inicial, lista para crecer a primaria y
+            secundaria. Sin instalar nada y sin conocimientos técnicos.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
             <Link
@@ -308,7 +315,7 @@ function Hero() {
             </span>
             <span aria-hidden className="h-1 w-1 rounded-full bg-slate-300" />
             <span className="inline-flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-brand-500" /> Listo en dos minutos
+              <Check className="h-4 w-4 text-brand-500" /> Tu colegio listo en una tarde
             </span>
             <span aria-hidden className="h-1 w-1 rounded-full bg-slate-300" />
             <span className="inline-flex items-center gap-1.5">
@@ -327,38 +334,40 @@ function Hero() {
 }
 
 /** Vista previa de la app dentro de un marco de teléfono (puro CSS, sin imágenes:
- *  una captura real se queda vieja en el primer rediseño). */
+ *  una captura real se queda vieja en el primer rediseño). Enseña la tarea que
+ *  más se repite en un colegio: pasar lista por la mañana. */
 function PhoneMockup() {
-  const rows = [
-    { name: 'Contrato Almacén Sur', amount: 18500, status: 'active' as const },
-    { name: 'Mantenimiento mensual', amount: 7200, status: 'active' as const },
-    { name: 'Propuesta Ferretería', amount: 4300, status: 'draft' as const },
-    { name: 'Servicio anterior', amount: 12000, status: 'archived' as const },
+  const rows: { name: string; status: AttendanceStatus }[] = [
+    { name: 'Ana Martínez', status: 'present' },
+    { name: 'Luis Pérez', status: 'present' },
+    { name: 'Sofía Díaz', status: 'late' },
+    { name: 'Mateo Gómez', status: 'absent' },
   ]
-  const statusTone: Record<string, string> = {
-    active: 'bg-emerald-50 text-emerald-600',
-    draft: 'bg-amber-50 text-amber-600',
-    archived: 'bg-slate-100 text-slate-400',
+  const statusTone: Record<AttendanceStatus, string> = {
+    present: 'bg-emerald-50 text-emerald-600',
+    late: 'bg-amber-50 text-amber-600',
+    absent: 'bg-red-50 text-red-500',
+    excused: 'bg-slate-100 text-slate-500',
   }
   return (
     <div className="relative rounded-[2.2rem] border-[6px] border-brand-950 bg-white p-3 shadow-2xl">
       <div className="absolute right-4 top-6 z-10 flex items-center gap-1 rounded-lg bg-accent-400 px-2.5 py-1.5 text-xs font-bold text-brand-950 shadow-lg">
-        <CheckCircle2 className="h-4 w-4" /> Al día
+        <CheckCircle2 className="h-4 w-4" /> Lista guardada
       </div>
       <div className="rounded-3xl bg-slate-50 p-4">
-        <p className="text-xs font-medium text-slate-400">Panel</p>
-        <h3 className="text-lg font-bold text-brand-950">Este mes</h3>
+        <p className="text-xs font-medium text-slate-400">Asistencia · hoy</p>
+        <h3 className="text-lg font-bold text-brand-950">Kinder A</h3>
         <div className="mt-3 rounded-2xl bg-white p-3 shadow-card">
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-slate-500">Total registrado</span>
-            <span className="text-sm font-semibold text-brand-950">{money(42000)}</span>
+            <span className="text-sm text-slate-500">Presentes</span>
+            <span className="text-sm font-semibold text-brand-950">18 de 20</span>
           </div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-2/3 rounded-full bg-brand-600" />
+            <div className="h-full w-[90%] rounded-full bg-brand-600" />
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-xs text-slate-400">8 items activos</span>
-            <span className="text-xs font-medium text-brand-600">+3 esta semana</span>
+            <span className="text-xs text-slate-400">Mensualidades al día</span>
+            <span className="text-xs font-medium text-brand-600">{money(185000)} cobrado</span>
           </div>
         </div>
         <div className="mt-3 space-y-1.5">
@@ -369,12 +378,12 @@ function PhoneMockup() {
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold text-brand-950">{r.name}</p>
-                <p className="text-[10px] text-slate-400">{money(r.amount)}</p>
+                <p className="text-[10px] text-slate-400">Kinder A</p>
               </div>
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusTone[r.status]}`}
               >
-                {ITEM_STATUS_LABEL[r.status]}
+                {ATTENDANCE_STATUS_LABEL[r.status]}
               </span>
             </div>
           ))}
@@ -387,14 +396,14 @@ function PhoneMockup() {
 /* ── Franja de confianza ────────────────────────────────────────────────── */
 
 /**
- * Hechos del producto, no métricas de vanidad. Cuando tengas cifras reales
- * (negocios activos, antigüedad, tiempo de actividad) cámbialas aquí — pero solo
- * si puedes sostenerlas.
+ * Hechos del producto, no métricas de vanidad. Cuando haya cifras reales
+ * (colegios activos, estudiantes, tiempo de actividad) se cambian aquí — pero
+ * solo si se pueden sostener.
  */
 function TrustBar() {
   const items = [
-    { icon: WifiOff, big: 'Sin conexión', small: 'Registra ahora, sube después' },
-    { icon: ShieldCheck, big: 'Datos aislados', small: 'Un negocio nunca ve el de otro' },
+    { icon: ShieldCheck, big: 'Cada colegio, aislado', small: 'Un colegio nunca ve los datos de otro' },
+    { icon: WifiOff, big: 'Lista sin señal', small: 'Pasa lista sin wifi; sube sola después' },
     { icon: Smartphone, big: 'Se instala', small: 'Como una app, sin tienda' },
   ]
   return (
@@ -419,42 +428,32 @@ function TrustBar() {
 /* ── Funciones ──────────────────────────────────────────────────────────── */
 
 function Features() {
+  // Las cuatro áreas del producto. Todo lo demás (asistencia, boletines,
+  // recibos, comunicados) cuelga de alguna de ellas.
   const features = [
     {
-      icon: LayoutDashboard,
-      title: 'Panel de un vistazo',
-      desc: 'Lo activo, lo pendiente y el total del mes en la primera pantalla. Sin armar un informe.',
+      icon: GraduationCap,
+      title: 'Estudiantes',
+      desc: 'Ficha completa de cada niño: datos, alergias, documentos e historial año tras año. Inscripciones y secciones sin hojas sueltas.',
       tone: 'brand',
     },
     {
-      icon: Package,
-      title: 'Tus registros, en orden',
-      desc: 'Crea, edita, archiva y busca los items de tu negocio desde el teléfono, sin hojas de cálculo sueltas.',
-      tone: 'brand',
-    },
-    {
-      icon: Users,
-      title: 'Tu equipo, con su acceso',
-      desc: 'Invita a quien administra contigo. Cada persona entra con su propia cuenta y puedes retirarle el acceso.',
+      icon: Star,
+      title: 'Académico',
+      desc: 'Años escolares, grados y secciones; asistencia diaria; evaluación por competencias e indicadores (Logrado, En proceso, Iniciado) y boletines listos para imprimir.',
       tone: 'accent',
     },
     {
-      icon: WifiOff,
-      title: 'Funciona sin señal',
-      desc: 'Lo que registras sin datos se guarda en el aparato y sube solo cuando vuelve la conexión.',
+      icon: Wallet,
+      title: 'Finanzas',
+      desc: 'Mensualidades e inscripciones generadas para todo el colegio en un clic, pagos con recibo numerado y cuentas pendientes al día.',
       tone: 'green',
     },
     {
-      icon: ShieldCheck,
-      title: 'Cada negocio, aislado',
-      desc: 'La separación entre negocios la impone la base de datos, no la pantalla: nadie llega a lo que no es suyo.',
+      icon: HeartHandshake,
+      title: 'Familias',
+      desc: 'Padres, madres y tutores con sus datos de contacto, quién puede recoger a cada niño y quién responde por los pagos. Hermanos sin fichas duplicadas.',
       tone: 'brand',
-    },
-    {
-      icon: History,
-      title: 'Historial de lo que pasa',
-      desc: 'Queda anotado quién cambió qué y cuándo. Útil el día que hay que revisar algo.',
-      tone: 'accent',
     },
   ] as const
   const toneMap: Record<string, string> = {
@@ -466,10 +465,10 @@ function Features() {
     <section id="funciones" className="scroll-mt-24 bg-slate-50 py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          title="Lo que necesitas para el día a día"
-          subtitle="Las funciones que se usan todos los días, sin las que solo se usan en la demo."
+          title="Cuatro áreas, un solo lugar"
+          subtitle="Lo que un colegio hace todos los días, sin las funciones que solo se usan en la demo."
         />
-        <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
           {features.map((f) => (
             <div
               key={f.title}
@@ -490,24 +489,98 @@ function Features() {
   )
 }
 
+/* ── Productos ──────────────────────────────────────────────────────────── */
+
+/**
+ * La misma plataforma vista por cada persona del colegio. No son apps
+ * distintas: es una sola cuenta con roles, y cada rol ve solo lo suyo.
+ * "Próximamente" va escrito: no se promete como disponible lo que no lo está.
+ */
+function Products() {
+  const products = [
+    {
+      icon: ShieldCheck,
+      name: `${APP_NAME} Admin`,
+      who: 'Dirección y secretaría',
+      desc: 'Estructura del colegio, inscripciones, equipo con roles y permisos.',
+    },
+    {
+      icon: CalendarCheck,
+      name: `${APP_NAME} Teacher`,
+      who: 'Docentes',
+      desc: 'Pasar lista desde el teléfono, evaluar indicadores y escribir observaciones de su sección.',
+    },
+    {
+      icon: Wallet,
+      name: `${APP_NAME} Pay`,
+      who: 'Caja y finanzas',
+      desc: 'Cargos, cobros, recibos y anulaciones con motivo. Nada se borra en silencio.',
+    },
+    {
+      icon: BarChart3,
+      name: `${APP_NAME} Reports`,
+      who: 'Dirección',
+      desc: 'Asistencia, matrícula por grado, ingresos y cuentas por cobrar en una pantalla.',
+    },
+    {
+      icon: Users,
+      name: `${APP_NAME} Family`,
+      who: 'Padres y tutores',
+      desc: 'Comunicados, boletines y estado de cuenta para las familias.',
+      soon: true,
+    },
+  ]
+  return (
+    <section id="productos" className="scroll-mt-24 bg-white py-20 lg:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          title="Una plataforma, una vista para cada quien"
+          subtitle="La docente ve su sección; la caja, los cobros; la Dirección, todo. Los permisos los aplica la base de datos, no la pantalla."
+        />
+        <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((p) => (
+            <div key={p.name} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white">
+                  <p.icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="truncate font-bold text-brand-950">{p.name}</h3>
+                  <p className="text-xs text-slate-500">{p.who}</p>
+                </div>
+                {p.soon && (
+                  <span className="ml-auto shrink-0 rounded-full bg-accent-100 px-2 py-0.5 text-[11px] font-semibold text-accent-700">
+                    Próximamente
+                  </span>
+                )}
+              </div>
+              <p className="mt-3 text-sm text-slate-600">{p.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ── Cómo funciona ──────────────────────────────────────────────────────── */
 
 function HowItWorks() {
   const steps = [
     {
       n: 1,
-      title: 'Crea tu cuenta',
-      desc: 'Correo, contraseña y el nombre de tu negocio. No pedimos tarjeta para empezar.',
+      title: 'Crea tu colegio',
+      desc: 'Correo, contraseña y el nombre del colegio. No pedimos tarjeta para empezar.',
     },
     {
       n: 2,
-      title: 'Carga tus registros',
-      desc: 'Añade tus items con su monto, su fecha y su estado. Puedes hacerlo desde el teléfono, aunque estés en la calle.',
+      title: 'Arma tu año escolar',
+      desc: 'Crea el año, los grados y las secciones; registra a tus estudiantes con su familia e inscríbelos. Todo guiado, paso a paso.',
     },
     {
       n: 3,
       title: 'Suma a tu equipo',
-      desc: 'Invita a quien administra contigo y trabajen sobre los mismos datos, cada quien con su cuenta.',
+      desc: 'Invita a docentes, secretaría y finanzas. Cada quien entra con su cuenta y ve solo lo que le toca.',
     },
   ]
   return (
@@ -517,7 +590,7 @@ function HowItWorks() {
           <SectionHeading
             align="left"
             title="Así de sencillo"
-            subtitle="De la hoja de cálculo al teléfono en tres pasos."
+            subtitle="De la libreta y la hoja de cálculo a una sola plataforma en tres pasos."
           />
           {steps.map((s) => (
             <div key={s.n} className="flex gap-4">
@@ -542,17 +615,17 @@ function HowItWorks() {
             <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-8 text-white">
               <BarChart3 className="h-12 w-12 text-accent-300" />
               <p className="mt-4 text-2xl font-extrabold leading-tight">
-                Los números al día, sin cerrar el mes a mano.
+                Asistencia, notas y cobros, siempre al día.
               </p>
               <p className="mt-2 text-white/70">
-                Cada registro actualiza el panel al instante. Lo que ves es lo que hay.
+                Cada lista, cada evaluación y cada pago actualiza el panel al instante.
               </p>
             </div>
             <div className="mt-6 grid grid-cols-3 gap-3 text-center">
               {[
-                { label: 'Activos', value: '8' },
-                { label: 'Borradores', value: '2' },
-                { label: 'Este mes', value: money(42000) },
+                { label: 'Estudiantes', value: '86' },
+                { label: 'Asistencia', value: '94%' },
+                { label: 'Cobrado', value: money(185000) },
               ].map((s) => (
                 <div key={s.label} className="rounded-xl border border-slate-200 bg-white p-3">
                   <p className="truncate text-sm font-bold text-brand-950">{s.value}</p>
@@ -583,7 +656,7 @@ function Pricing() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           title="Planes que crecen contigo"
-          subtitle="Empieza gratis y cambia de plan cuando el negocio lo pida."
+          subtitle="Empieza gratis y cambia de plan cuando tu colegio crezca."
         />
         <div className={`mx-auto mt-14 grid grid-cols-1 gap-8 ${ancho} ${cols}`}>
           {visibles.map((p) => (
@@ -591,8 +664,8 @@ function Pricing() {
           ))}
         </div>
         <p className="mt-8 text-center text-sm text-slate-500">
-          Los topes de cada plan se aplican en el servidor. Puedes subir o bajar de plan
-          desde Configuración.
+          Los topes de cada plan se aplican en el servidor y cuentan solo estudiantes
+          activos: el historial de egresados no ocupa cupo. Cambias de plan desde Configuración.
         </p>
       </div>
     </section>
@@ -656,27 +729,31 @@ function Faq() {
   const items = [
     {
       q: `¿Qué es ${APP_NAME}?`,
-      a: `Una aplicación web para administrar tu negocio: llevas tus registros, ves tus números y trabajas con tu equipo desde el mismo sitio, en el teléfono o en la computadora.`,
+      a: `Una plataforma para administrar tu colegio desde un solo lugar: estudiantes y familias, inscripciones, asistencia, evaluaciones y boletines, cobros y recibos, comunicados y reportes. Funciona en el teléfono y en la computadora.`,
     },
     {
-      q: '¿Tengo que instalar algo?',
-      a: 'No. Se abre en el navegador. Si quieres tenerla como una app más, desde el propio navegador puedes añadirla a la pantalla de inicio: se abre a pantalla completa y funciona igual.',
+      q: '¿Sirve para mi nivel educativo?',
+      a: 'Hoy está pensada para educación inicial y preescolar (evaluación por competencias con Logrado / En proceso / Iniciado). El modelo ya contempla primaria y secundaria: los grados llevan su nivel y las evaluaciones admiten calificación numérica.',
     },
     {
-      q: '¿Funciona sin internet?',
-      a: 'Sí. Puedes consultar lo último que cargaste y registrar cosas nuevas sin conexión; quedan en cola en tu aparato y suben solas cuando vuelve la señal. Una franja te avisa de cuántos cambios faltan por subir.',
+      q: '¿Necesito conocimientos técnicos?',
+      a: 'No. Se abre en el navegador y te guía: creas el año escolar, los grados y las secciones, registras a tus estudiantes y empiezas. Si quieres, la añades a la pantalla de inicio del teléfono como una app más.',
     },
     {
-      q: '¿Puedo trabajar con más personas?',
-      a: 'Sí, en los planes que lo permiten. Invitas por correo, cada persona entra con su propia cuenta y puedes retirarle el acceso cuando quieras.',
+      q: '¿Los datos de mi colegio están separados de los de otros?',
+      a: 'Sí. Cada colegio es un espacio aparte y la separación la aplica la base de datos, no la pantalla: aunque una consulta pidiera datos de otro colegio, no los devolvería. Además, cada rol ve solo lo suyo: una docente no ve los cobros.',
     },
     {
-      q: '¿Mis datos están separados de los de otros negocios?',
-      a: 'Sí. Cada negocio es un espacio aparte y la separación la aplica la base de datos, no la pantalla: aunque una consulta pidiera datos de otro negocio, no los devolvería.',
+      q: '¿Qué pasa con los datos de los niños?',
+      a: 'Son del colegio. ArreSchool los guarda por encargo del colegio, con acceso restringido por rol; las fotos y documentos van a un almacenamiento privado y se abren con enlaces que caducan. Los detalles están en la Política de Privacidad.',
+    },
+    {
+      q: '¿Puedo pasar lista sin internet?',
+      a: 'Sí. La asistencia se guarda en el teléfono si se cae el wifi y sube sola cuando vuelve la señal. Una franja avisa de cuántos cambios faltan por subir.',
     },
     {
       q: '¿Cuánto cuesta?',
-      a: `Puedes empezar gratis con el plan ${plans.basic.name}. Cuando necesites más, el plan ${plans.pro.name} cuesta ${planPriceLabel(plans.pro)}. Los precios y los topes que ves aquí son los que se aplican en la aplicación.`,
+      a: `Puedes empezar gratis con el plan ${plans.basic.name}. Cuando tu colegio crezca, el plan ${plans.pro.name} cuesta ${planPriceLabel(plans.pro)}. Los precios y los topes que ves aquí son los que se aplican en la aplicación.`,
     },
   ]
   return (
@@ -718,7 +795,7 @@ function FinalCta() {
             Empieza hoy, sin compromiso
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
-            Crea tu cuenta gratis y ten tu negocio ordenado esta misma tarde.
+            Crea tu cuenta gratis y ten tu colegio organizado esta misma tarde.
           </p>
           <Link
             to="/registro"
@@ -745,7 +822,8 @@ function Footer() {
     {
       title: 'Producto',
       items: [
-        { label: 'Funciones', id: 'funciones' },
+        { label: 'Áreas', id: 'funciones' },
+        { label: 'Productos', id: 'productos' },
         { label: 'Cómo funciona', id: 'proceso' },
         { label: 'Precios', id: 'precios' },
         { label: 'Preguntas', id: 'faq' },
@@ -774,8 +852,8 @@ function Footer() {
           <div className="max-w-xs">
             <Wordmark dark />
             <p className="mt-4 text-sm text-white/60">
-              {APP_TAGLINE}. Una herramienta sencilla para llevar las cuentas de un negocio
-              pequeño sin complicarse la vida.
+              {APP_TAGLINE}. La plataforma sencilla para administrar colegios: estudiantes,
+              académico, finanzas y familias en un solo lugar.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">

@@ -74,7 +74,7 @@ cp .env.example .env             # VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY
 
 supabase login
 supabase link --project-ref TU_PROJECT_REF
-supabase db push                 # aplica supabase/migrations/0001…0018
+supabase db push                 # aplica supabase/migrations/0001…0019
 supabase functions deploy welcome
 
 npm run icons                    # íconos PWA + favicon desde public/logo.png
@@ -97,7 +97,7 @@ hay datos de demostración** (`supabase/seed.sql` explica por qué).
 ArreSchool nace de `saas-starter` (React + Supabase con RLS, planes, super-admin y
 PWA offline). Se conservó todo su andamiaje de plataforma y se sustituyó la
 entidad de ejemplo `items` por el dominio escolar, **con migraciones nuevas**
-(0012–0018) en lugar de reescribir las del starter.
+(0012–0019) en lugar de reescribir las del starter.
 
 - **Sin servidor intermedio.** No hay API propia (ni Hono ni Express): el
   navegador habla con PostgREST con el JWT del usuario, y toda regla que importa

@@ -4,7 +4,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import type { Tenant } from '@/types/db'
 
 /**
- * Campos del negocio que se editan desde Configuración.
+ * Campos del colegio que se editan desde Configuración.
  *
  * `suspended_at` queda FUERA a propósito: es una decisión comercial del
  * super-admin y el trigger `tenants_guard` (0008) rechaza el cambio si viene de
@@ -14,14 +14,24 @@ import type { Tenant } from '@/types/db'
 export type TenantUpdate = Partial<
   Pick<
     Tenant,
-    'name' | 'logo_url' | 'phone' | 'whatsapp' | 'email' | 'address' | 'currency' | 'locale'
+    | 'name'
+    | 'logo_url'
+    | 'phone'
+    | 'whatsapp'
+    | 'email'
+    | 'address'
+    | 'currency'
+    | 'locale'
+    | 'legal_id'
+    | 'principal_name'
+    | 'receipt_footer'
   >
 >
 
 /**
- * Actualiza los datos del negocio.
+ * Actualiza los datos del colegio.
  *
- * El `id` es opcional: si no viene se usa el del negocio de la sesión. La RLS de
+ * El `id` es opcional: si no viene se usa el del colegio de la sesión. La RLS de
  * `tenants` solo permite tocar `id = auth_tenant_id()`, así que mandar otro no
  * abre ninguna puerta — simplemente no afectaría a ninguna fila.
  */
@@ -30,7 +40,7 @@ export function useUpdateTenant() {
   return useMutation({
     mutationFn: async ({ id, ...patch }: TenantUpdate & { id?: string }) => {
       const tenantId = id ?? tenant?.id
-      if (!tenantId) throw new Error('Sin negocio')
+      if (!tenantId) throw new Error('Sin colegio')
       const { error } = await supabase.from('tenants').update(patch).eq('id', tenantId)
       if (error) throw error
     },

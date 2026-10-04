@@ -31,7 +31,7 @@ export function AuthLayout({
   /**
    * Muestra la salida a la página pública. Se apaga en las pantallas donde
    * irse a medias deja al usuario en un estado raro (primeros pasos sin
-   * negocio, o la sesión temporal de recuperar contraseña).
+   * colegio, o la sesión temporal de recuperar contraseña).
    */
   backToHome?: boolean
   /**

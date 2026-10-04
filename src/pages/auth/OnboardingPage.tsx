@@ -15,10 +15,10 @@ import { APP_NAME } from '@/lib/constants'
 import { cn } from '@/lib/cn'
 
 /**
- * Primeros pasos: la cuenta ya existe pero todavía no tiene negocio.
+ * Primeros pasos: la cuenta ya existe pero todavía no tiene colegio.
  *
  * Son los dos únicos caminos que crean un `profile` —la RLS no permite ningún
- * otro—: crear un negocio propio (`setup_tenant`) o entrar en uno ajeno con un
+ * otro—: crear un colegio propio (`setup_tenant`) o entrar en uno ajeno con un
  * código de invitación (`accept_invite`).
  */
 export function OnboardingPage() {
@@ -26,12 +26,12 @@ export function OnboardingPage() {
 
   return (
     // Sin «Inicio» y con «Cerrar sesión»: aquí hay sesión pero todavía no hay
-    // negocio, así que la app no tiene menú y esta es la única salida.
+    // colegio, así que la app no tiene menú y esta es la única salida.
     <AuthLayout
       backToHome={false}
       showSignOut
       title="Configura tu acceso"
-      subtitle="Crea tu negocio o únete a uno con un código"
+      subtitle="Crea tu colegio o únete a uno con un código"
     >
       <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
         <ModeTab
@@ -39,7 +39,7 @@ export function OnboardingPage() {
           onClick={() => setMode('create')}
           icon={<Store className="h-4 w-4" />}
         >
-          Crear negocio
+          Crear colegio
         </ModeTab>
         <ModeTab
           active={mode === 'join'}
@@ -82,7 +82,7 @@ function ModeTab({
 }
 
 const createSchema = z.object({
-  name: z.string().trim().min(2, 'Escribe el nombre de tu negocio'),
+  name: z.string().trim().min(2, 'Escribe el nombre de tu colegio'),
   fullName: z.string().trim(),
   whatsapp: z.string().trim(),
 })
@@ -108,7 +108,7 @@ function CreateForm() {
   })
 
   const submit = handleSubmit(async (values) => {
-    // `setup_tenant` es idempotente y crea negocio + perfil (owner) +
+    // `setup_tenant` es idempotente y crea colegio + perfil (owner) +
     // suscripción en una sola transacción: si algo falla, no queda a medias.
     const { error } = await supabase.rpc('setup_tenant', {
       p_name: values.name.trim(),
@@ -116,7 +116,7 @@ function CreateForm() {
       p_whatsapp: values.whatsapp.trim() || null,
     })
     if (error) {
-      toast.error(errorMessage(error, 'No pudimos crear el negocio'))
+      toast.error(errorMessage(error, 'No pudimos crear el colegio'))
       return
     }
     // Bienvenida para quien llegó por Google: ahí no hay `signUp` que la dispare
@@ -136,10 +136,10 @@ function CreateForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <Field label="Nombre de tu negocio" required error={errors.name?.message}>
+      <Field label="Nombre de tu colegio" required error={errors.name?.message}>
         <div className="relative">
           <Store className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input placeholder="Ej. Taller La Esperanza" className="pl-9" {...register('name')} />
+          <Input placeholder="Ej. Colegio Mis Primeros Pasos" className="pl-9" {...register('name')} />
         </div>
       </Field>
       <Field label="Tu nombre" error={errors.fullName?.message}>

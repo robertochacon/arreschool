@@ -4,9 +4,9 @@ import { useAuth } from '@/auth/AuthProvider'
 import type { MyPlanRequest, PlanCode } from '@/types/db'
 
 /**
- * Solicitud de cambio de plan PENDIENTE del negocio actual (o `null`).
+ * Solicitud de cambio de plan PENDIENTE del colegio actual (o `null`).
  *
- * No hace falta filtrar por negocio: la RLS de `plan_requests` solo devuelve las
+ * No hace falta filtrar por colegio: la RLS de `plan_requests` solo devuelve las
  * del propio tenant. La clave tampoco lo lleva —el contrato la fija en
  * `['my-plan-request']`— y no hay riesgo de que una cuenta vea la de otra
  * porque al cerrar sesión se vacía el cache de lecturas (`clearOfflineCache`).

@@ -17,12 +17,12 @@ import { useAdminDeleteTenant, useAdminTenantPurgePreview } from '@/hooks/admin'
 import type { AdminTenantPurgePreview } from '@/types/db'
 
 /**
- * Borrado en cascada de un negocio. Lo usan la lista de /admin y el detalle.
+ * Borrado en cascada de un colegio. Lo usan la lista de /admin y el detalle.
  *
  * Tres frenos, porque no hay vuelta atrás:
  *   1) Enseña qué se va a borrar, con conteos frescos del servidor (no de la
  *      caché). Sin vista previa NO se borra.
- *   2) Obliga a escribir el nombre del negocio; el servidor lo revalida.
+ *   2) Obliga a escribir el nombre del colegio; el servidor lo revalida.
  *   3) Las cuentas de acceso solo se borran si se marca la casilla.
  */
 export function DeleteTenantModal({
@@ -45,7 +45,7 @@ export function DeleteTenantModal({
   const [confirm, setConfirm] = useState('')
   const [deleteUsers, setDeleteUsers] = useState(false)
 
-  // Al cambiar de negocio (o al cerrar) se limpian los dos controles peligrosos:
+  // Al cambiar de colegio (o al cerrar) se limpian los dos controles peligrosos:
   // si no, el nombre tecleado para uno podría quedar validando el siguiente.
   useEffect(() => {
     setConfirm('')
@@ -59,7 +59,7 @@ export function DeleteTenantModal({
   //     `paused` —ni cargando ni con error—, así que el modal se pintaba con el
   //     nombre de la fila y el botón se habilitaba al teclearlo: se borraría a
   //     ciegas, sin haber visto un solo conteo.
-  //   • `target !== ''`: con un negocio cuyo nombre se quedó en blanco, la
+  //   • `target !== ''`: con un colegio cuyo nombre se quedó en blanco, la
   //     casilla vacía «coincidiría» y el botón rojo saldría habilitado de
   //     entrada. (La RPC también lo rechaza; aquí se dice por qué.)
   const target = norm(name)
@@ -81,14 +81,14 @@ export function DeleteTenantModal({
       toast.success(`"${res.name}" eliminado: ${num(rows)} registros · ${files}.`)
 
       // Los datos ya no están, pero estos archivos siguen en el bucket bajo la
-      // carpeta con el id del negocio. Se dice cuántos y dónde limpiarlos: un
-      // «reintentar» no existe, porque ya no hay negocio al que volver.
+      // carpeta con el id del colegio. Se dice cuántos y dónde limpiarlos: un
+      // «reintentar» no existe, porque ya no hay colegio al que volver.
       if (res.files_unknown) {
         toast.error(`Revisa Supabase → Storage, carpeta ${res.tenant_id}: no se pudo leer el almacenamiento.`)
       } else if ((res.files_pending ?? 0) > 0) {
         toast.error(`Quedaron ${num(res.files_pending ?? 0)} archivo(s) en el almacenamiento. Bórralos desde Supabase → Storage, carpeta ${res.tenant_id}.`)
       }
-      // -1 = la base no pudo tocar `auth.users` (privilegios). El negocio ya no
+      // -1 = la base no pudo tocar `auth.users` (privilegios). El colegio ya no
       // está, pero esas cuentas siguen pudiendo entrar (a un onboarding vacío).
       if (counts.auth_users === -1) {
         toast.error('No se pudieron eliminar las cuentas de acceso: bórralas desde Supabase → Authentication.')
@@ -97,16 +97,16 @@ export function DeleteTenantModal({
       onDeleted?.()
     } catch (err) {
       // Un «no se pudo eliminar» a secas puede ser mentira: si la petición se
-      // cortó DESPUÉS del commit, el negocio sí se borró. Los errores de
+      // cortó DESPUÉS del commit, el colegio sí se borró. Los errores de
       // PostgREST traen `code`; un fallo de red es un TypeError sin `code`.
       const code = (err as { code?: string } | null)?.code
       if (code === '57014') {
         // Timeout de sentencia: Postgres cancela y revierte. No se borró nada.
         toast.error('El borrado tardó demasiado y se canceló: no se borró nada. Inténtalo de nuevo.')
       } else if (code) {
-        toast.error(errorMessage(err, 'No se pudo eliminar el negocio.'))
+        toast.error(errorMessage(err, 'No se pudo eliminar el colegio.'))
       } else {
-        toast.error('Se perdió la conexión y no se pudo confirmar si el negocio se eliminó. Actualiza el panel para verlo.')
+        toast.error('Se perdió la conexión y no se pudo confirmar si el colegio se eliminó. Actualiza el panel para verlo.')
       }
     }
   }
@@ -117,7 +117,7 @@ export function DeleteTenantModal({
       // Cerrar a mitad de un borrado dejaría la mutación en el aire y sin nadie
       // que lea su resultado: mientras corre, el diálogo no se cierra.
       onClose={purge.isPending ? () => {} : onClose}
-      title={name ? `Eliminar "${name}"` : 'Eliminar negocio'}
+      title={name ? `Eliminar "${name}"` : 'Eliminar colegio'}
       size="lg"
       footer={
         <>
@@ -132,14 +132,14 @@ export function DeleteTenantModal({
         // Sin conexión la consulta queda en pausa: hay que decirlo, porque el
         // botón se queda deshabilitado y sin explicación parece un error.
         <Note>
-          Sin conexión no se puede eliminar un negocio: hace falta leer primero qué se va a borrar.
+          Sin conexión no se puede eliminar un colegio: hace falta leer primero qué se va a borrar.
           Reconéctate y vuelve a intentarlo.
         </Note>
       ) : preview.isLoading ? (
         <PageLoader label="Contando lo que se va a borrar…" />
       ) : preview.isError ? (
         <div className="space-y-3">
-          <p className="text-sm text-red-600">{errorMessage(preview.error, 'No se pudo leer el negocio.')}</p>
+          <p className="text-sm text-red-600">{errorMessage(preview.error, 'No se pudo leer el colegio.')}</p>
           <Button variant="outline" size="sm" onClick={() => preview.refetch()}>Volver a intentar</Button>
         </div>
       ) : (
@@ -149,8 +149,8 @@ export function DeleteTenantModal({
             <div className="min-w-0 text-sm text-red-800">
               <p className="font-semibold">Esto no se puede deshacer.</p>
               <p className="mt-0.5 text-red-700">
-                Se borra el negocio con sus items, notificaciones, bitácora, invitaciones,
-                solicitudes de plan y archivos. La app no guarda ninguna copia.
+                Se borra el colegio con sus estudiantes, familias, inscripciones, asistencia,
+                evaluaciones, pagos, bitácora, invitaciones, solicitudes de plan y archivos. La app no guarda ninguna copia.
               </p>
             </div>
           </div>
@@ -171,7 +171,7 @@ export function DeleteTenantModal({
                 </span>
                 <span className="mt-0.5 block text-xs text-slate-500">
                   Sin marcar, {p.members === 1 ? 'esa persona conserva' : 'esas personas conservan'} su
-                  correo y contraseña y {p.members === 1 ? 'puede' : 'pueden'} crear otro negocio o
+                  correo y contraseña y {p.members === 1 ? 'puede' : 'pueden'} crear otro colegio o
                   unirse a uno. Marcado, se borra la cuenta entera y ya no {p.members === 1 ? 'podrá' : 'podrán'} entrar.
                 </span>
               </span>
@@ -180,9 +180,9 @@ export function DeleteTenantModal({
 
           {target === '' ? (
             <Note>
-              Este negocio no tiene nombre, así que no hay nada que escribir para confirmar. Ponle
+              Este colegio no tiene nombre, así que no hay nada que escribir para confirmar. Ponle
               uno en su Configuración y vuelve: la confirmación es lo único que evita borrar el
-              negocio equivocado.
+              colegio equivocado.
             </Note>
           ) : (
             <div>
@@ -210,7 +210,10 @@ export function DeleteTenantModal({
 function PurgeCounts({ p, currency }: { p: AdminTenantPurgePreview; currency: string }) {
   const items: { label: string; value: string }[] = [
     { label: 'Usuarios', value: num(p.members) },
-    { label: 'Items', value: `${num(p.items)}${p.active_items > 0 ? ` (${p.active_items} activos)` : ''}` },
+    { label: 'Estudiantes', value: `${num(p.students)}${p.active_students > 0 ? ` (${p.active_students} activos)` : ''}` },
+    { label: 'Familiares', value: num(p.guardians) },
+    { label: 'Inscripciones', value: num(p.enrollments) },
+    { label: 'Pagos', value: num(p.payments) },
     { label: 'Notificaciones', value: num(p.notifications) },
     { label: 'Bitácora', value: num(p.audit_logs) },
     { label: 'Invitaciones', value: num(p.invites) },
@@ -218,7 +221,7 @@ function PurgeCounts({ p, currency }: { p: AdminTenantPurgePreview; currency: st
     // `null` / negativo = no se pudo contar (sin privilegio sobre Storage), que
     // NO es lo mismo que cero: por eso se pinta un guion y no un 0.
     { label: 'Archivos', value: p.files == null || p.files < 0 ? '—' : num(p.files) },
-    { label: 'Monto en items', value: money(p.amount_total, currency) },
+    { label: 'Cobrado', value: money(p.collected_total, currency) },
   ]
   return (
     <div className="rounded-xl border border-slate-200">

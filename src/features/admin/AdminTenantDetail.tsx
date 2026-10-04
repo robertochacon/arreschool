@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
-  ArrowLeft, Ban, Package, Play, ShieldCheck, Trash2, UserCog, UserRound, Users, Wallet,
+  ArrowLeft, Ban, GraduationCap, Play, ShieldCheck, Trash2, UserCog, UserRound, Users, Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
+import { ROLE_LABEL } from '@/lib/constants'
 import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -22,7 +23,7 @@ import type { AdminMember, SubscriptionStatus } from '@/types/db'
 import { DeleteTenantModal } from './DeleteTenantModal'
 
 /**
- * Ficha de un negocio vista por el super-admin: qué tiene dentro, quién entra y
+ * Ficha de un colegio vista por el super-admin: qué tiene dentro, quién entra y
  * el único botón que lo borra.
  *
  * El nombre y el plan salen de `useAdminTenants()` —la lista que el panel ya
@@ -37,7 +38,6 @@ const STATUS_LABEL: Record<SubscriptionStatus, string> = {
 const STATUS_TONE: Record<SubscriptionStatus, 'green' | 'amber' | 'red' | 'slate'> = {
   trial: 'amber', active: 'green', past_due: 'red', canceled: 'slate',
 }
-const ROLE_LABEL: Record<AdminMember['role'], string> = { owner: 'Dueño', admin: 'Administrador' }
 
 export function AdminTenantDetail() {
   const { id } = useParams<{ id: string }>()
@@ -82,7 +82,7 @@ export function AdminTenantDetail() {
         </button>
 
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <h1 className="min-w-0 truncate text-xl font-bold text-slate-900">{t?.name ?? 'Negocio'}</h1>
+          <h1 className="min-w-0 truncate text-xl font-bold text-slate-900">{t?.name ?? 'Colegio'}</h1>
           {t?.plan && <Badge tone="brand">{plans[t.plan].name}</Badge>}
           {t?.sub_status && <Badge tone={STATUS_TONE[t.sub_status]}>{STATUS_LABEL[t.sub_status]}</Badge>}
           {t?.suspended && <Badge tone="red">Suspendido</Badge>}
@@ -93,16 +93,16 @@ export function AdminTenantDetail() {
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard
-            label="Items" value={s ? num(s.total_items) : '—'} icon={<Package className="h-5 w-5" />} tone="brand"
-            hint={s ? `${num(s.draft_items)} borradores · ${num(s.archived_items)} archivados` : undefined}
+            label="Estudiantes activos" value={s ? num(s.students_active) : '—'} icon={<GraduationCap className="h-5 w-5" />} tone="brand"
+            hint={s ? `${num(s.students_total)} en total · ${num(s.created_this_week)} nuevos esta semana` : undefined}
           />
           <StatCard
-            label="Items activos" value={s ? num(s.active_items) : '—'} icon={<Package className="h-5 w-5" />} tone="green"
-            hint={s ? `${num(s.created_this_week)} creados esta semana` : undefined}
+            label="Inscritos este año" value={s ? num(s.enrolled) : '—'} icon={<Users className="h-5 w-5" />} tone="green"
+            hint={s ? `${num(s.sections)} secciones · ${num(s.teachers)} docentes · ${num(s.guardians)} familiares` : undefined}
           />
           <StatCard
-            label="Monto total" value={s ? money(s.amount_total, currency) : '—'} icon={<Wallet className="h-5 w-5" />} tone="accent"
-            hint={s ? `${money(s.amount_this_month, currency)} este mes` : undefined}
+            label="Cobrado" value={s ? money(s.collected_total, currency) : '—'} icon={<Wallet className="h-5 w-5" />} tone="accent"
+            hint={s ? `${money(s.collected_this_month, currency)} este mes` : undefined}
           />
           <StatCard
             label="Usuarios" value={s ? num(s.members) : '—'} icon={<UserRound className="h-5 w-5" />} tone="slate"
@@ -111,7 +111,7 @@ export function AdminTenantDetail() {
         </div>
 
         <div ref={membersRef} className="scroll-mt-20">
-          <MembersCard tenantId={id} tenantName={t?.name ?? 'este negocio'} />
+          <MembersCard tenantId={id} tenantName={t?.name ?? 'este colegio'} />
         </div>
 
         {/* ── Zona de peligro ───────────────────────────────────────────────
@@ -121,10 +121,10 @@ export function AdminTenantDetail() {
           <CardHeader title="Zona de peligro" subtitle="Acciones irreversibles" />
           <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-800">Eliminar este negocio</p>
+              <p className="text-sm font-medium text-slate-800">Eliminar este colegio</p>
               <p className="text-xs text-slate-500">
-                Borra en cascada sus items, notificaciones, bitácora, invitaciones, solicitudes de
-                plan y archivos. Si solo quieres cortarle el acceso, suspéndelo desde el panel.
+                Borra en cascada sus estudiantes, familias, inscripciones, asistencia, evaluaciones,
+                pagos, bitácora, invitaciones, solicitudes de plan y archivos. Si solo quieres cortarle el acceso, suspéndelo desde el panel.
               </p>
             </div>
             <Button variant="danger" className="shrink-0" onClick={() => setConfirmDelete(true)}>
@@ -141,7 +141,7 @@ export function AdminTenantDetail() {
         tenantName={t?.name}
         currency={t?.currency}
         onClose={() => setConfirmDelete(false)}
-        // El negocio ya no existe: quedarse aquí dejaría una pantalla de huecos.
+        // El colegio ya no existe: quedarse aquí dejaría una pantalla de huecos.
         onDeleted={() => navigate('/admin')}
       />
     </div>
@@ -149,7 +149,7 @@ export function AdminTenantDetail() {
 }
 
 /**
- * Usuarios del negocio: rol, bloqueo de acceso y baja.
+ * Usuarios del colegio: rol, bloqueo de acceso y baja.
  *
  * Sin tabla ni siquiera en escritorio. Son cuatro datos por persona y caben en
  * una fila a 360px, así que una tabla solo añadiría scroll lateral en el
@@ -182,7 +182,7 @@ function MembersCard({ tenantId, tenantName }: { tenantId?: string; tenantName: 
     const nextRole = m.role === 'owner' ? 'admin' : 'owner'
     return [
       {
-        label: `Convertir en ${ROLE_LABEL[nextRole].toLowerCase()}`,
+        label: `Cambiar a: ${ROLE_LABEL[nextRole]}`,
         icon: <UserCog className="h-4 w-4" />,
         onClick: () =>
           void run(
@@ -205,13 +205,13 @@ function MembersCard({ tenantId, tenantName }: { tenantId?: string; tenantName: 
             onClick: () => void run(setBanned.mutateAsync({ user: m.id, banned: true }), 'Acceso bloqueado.'),
           },
       {
-        label: 'Quitar del negocio',
+        label: 'Quitar del colegio',
         icon: <Trash2 className="h-4 w-4" />,
         tone: 'danger',
-        hint: 'Conserva su cuenta: podrá crear otro negocio o unirse a uno',
+        hint: 'Conserva su cuenta: podrá crear otro colegio o unirse a uno',
         onClick: () => {
           if (!window.confirm(`¿Quitar a ${m.full_name ?? m.email} de ${tenantName}?`)) return
-          void run(removeMember.mutateAsync({ tenant, user: m.id }), 'Usuario quitado del negocio.')
+          void run(removeMember.mutateAsync({ tenant, user: m.id }), 'Usuario quitado del colegio.')
         },
       },
     ]
@@ -219,14 +219,14 @@ function MembersCard({ tenantId, tenantName }: { tenantId?: string; tenantName: 
 
   return (
     <Card className="mt-4">
-      <CardHeader title="Usuarios" subtitle={`${rows.length} con acceso a este negocio`} />
+      <CardHeader title="Usuarios" subtitle={`${rows.length} con acceso a este colegio`} />
       {members.isLoading ? (
         <PageLoader label="Cargando usuarios…" />
       ) : members.isError ? (
         <p className="p-6 text-center text-sm text-red-600">{errorMessage(members.error, 'No se pudieron cargar los usuarios.')}</p>
       ) : rows.length === 0 ? (
         <EmptyState className="m-5" icon={<Users className="h-5 w-5" />} title="Sin usuarios"
-          description="Este negocio no tiene ninguna cuenta asociada." />
+          description="Este colegio no tiene ninguna cuenta asociada." />
       ) : (
         <ul className="divide-y divide-slate-100">
           {rows.map((m) => (
@@ -248,7 +248,7 @@ function MembersCard({ tenantId, tenantName }: { tenantId?: string; tenantName: 
       <CardBody className="border-t border-slate-100 py-3">
         <p className="text-xs text-slate-500">
           «Bloquear acceso» apaga el login de esa persona en toda la plataforma; «quitar» solo la
-          desvincula de este negocio. La base no deja al negocio sin dueño ni a la plataforma sin
+          desvincula de este colegio. La base no deja al colegio sin dueño ni a la plataforma sin
           super-admins: esos casos los rechaza la RPC, no este formulario.
         </p>
       </CardBody>

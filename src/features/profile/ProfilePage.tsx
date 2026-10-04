@@ -63,7 +63,7 @@ export function ProfilePage() {
               <Row icon={<AtSign className="h-4 w-4" />} label="Correo" value={user?.email ?? '—'} />
               <Row
                 icon={<Building2 className="h-4 w-4" />}
-                label="Negocio"
+                label="Colegio"
                 value={tenant?.name ?? '—'}
               />
               <Row
@@ -143,7 +143,7 @@ function PersonalDataCard() {
     setUploading(true)
     try {
       // Se reutiliza el bucket `logos`: es público y su política ya deja
-      // escribir bajo la carpeta del negocio. Un bucket aparte para avatares no
+      // escribir bajo la carpeta del colegio. Un bucket aparte para avatares no
       // aportaría nada distinto y obligaría a otra migración.
       const { publicUrl } = await uploadFile('logos', tenant.id, file, 'avatar-')
       await update.mutateAsync({ avatar_url: publicUrl })

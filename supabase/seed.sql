@@ -10,7 +10,7 @@
 -- `auth.users` y `auth.identities`, y eso:
 --   • depende de la versión de GoTrue (las columnas cambian entre versiones, y
 --     un seed que revienta deja el `db reset` a medias);
---   • se salta el único camino soportado para dar de alta un negocio, que es
+--   • se salta el único camino soportado para dar de alta un colegio, que es
 --     `setup_tenant()`, con sus comprobaciones y su suscripción de prueba;
 --   • deja un usuario con contraseña conocida que tarde o temprano alguien
 --     acaba llevándose a un entorno real.
@@ -20,18 +20,18 @@
 --   2. Regístrate en /registro (con Supabase local, la confirmación de correo
 --      está apagada: entras directo, y el correo de bienvenida se queda en
 --      Inbucket → http://localhost:54324).
---   3. La pantalla de bienvenida llama a `setup_tenant()`, que crea el negocio,
+--   3. La pantalla de bienvenida llama a `setup_tenant()`, que crea el colegio,
 --      tu perfil de `owner` y la suscripción `basic` en prueba de 30 días.
 --
 -- Para el panel de plataforma (/admin) hace falta un super-admin, y ese NO se
 -- puede crear desde el cliente por diseño: usa scripts/grant-platform-admin.sql
--- con una cuenta SIN negocio.
+-- con una cuenta SIN colegio.
 --
 -- Los planes (`plan_settings`) no se siembran aquí: los inserta la migración
 -- 0009, que es su única fuente de verdad.
 --
 -- ─────────────────────────────────────────────────────────────────────────────
--- ¿Quieres datos de ejemplo para tu propio negocio de desarrollo?
+-- ¿Quieres datos de ejemplo para tu propio colegio de desarrollo?
 -- Regístrate primero, saca tu tenant_id y descomenta esto:
 --
 --   select id, name from public.tenants;   -- copia el id

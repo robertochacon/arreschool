@@ -25,7 +25,7 @@ import type {
 //
 // Las mutaciones invalidan `['admin']` entero, no la clave exacta: casi
 // cualquier cambio (plan, suspensión, rol, borrado) se refleja a la vez en el
-// resumen, en la lista de negocios y en el detalle, y perseguir cada clave se
+// resumen, en la lista de colegios y en el detalle, y perseguir cada clave se
 // olvida justo la que hace falta.
 
 /** Métricas globales de la plataforma (todas las cuentas). */
@@ -40,7 +40,7 @@ export function useAdminOverview() {
   })
 }
 
-/** Listado de todos los negocios con sus métricas y su dueña. */
+/** Listado de todos los colegios con sus métricas y su dueña. */
 export function useAdminTenants() {
   return useQuery({
     queryKey: ['admin', 'tenants'],
@@ -52,7 +52,7 @@ export function useAdminTenants() {
   })
 }
 
-/** Cambia el plan (y opcionalmente el estado) de la suscripción de un negocio. */
+/** Cambia el plan (y opcionalmente el estado) de la suscripción de un colegio. */
 export function useAdminSetSubscription() {
   const qc = useQueryClient()
   return useMutation({
@@ -70,7 +70,7 @@ export function useAdminSetSubscription() {
   })
 }
 
-/** Suspende / reactiva un negocio entero (queda en solo lectura). */
+/** Suspende / reactiva un colegio entero (queda en solo lectura). */
 export function useAdminSetTenantSuspended() {
   const qc = useQueryClient()
   return useMutation({
@@ -85,7 +85,7 @@ export function useAdminSetTenantSuspended() {
   })
 }
 
-/** El panel de un negocio, visto desde fuera. */
+/** El panel de un colegio, visto desde fuera. */
 export function useAdminTenantSummary(tenantId: string | undefined) {
   return useQuery({
     queryKey: ['admin', 'tenant-summary', tenantId],
@@ -98,7 +98,7 @@ export function useAdminTenantSummary(tenantId: string | undefined) {
   })
 }
 
-// ── Usuarios de un negocio ───────────────────────────────────────────────────
+// ── Usuarios de un colegio ───────────────────────────────────────────────────
 
 export function useAdminMembers(tenantId: string | undefined) {
   return useQuery({
@@ -113,8 +113,8 @@ export function useAdminMembers(tenantId: string | undefined) {
 }
 
 /**
- * Cambia el rol de un miembro. Va el negocio ADEMÁS del usuario: la RPC
- * comprueba que esa persona pertenezca a ese negocio antes de tocar nada, para
+ * Cambia el rol de un miembro. Va el colegio ADEMÁS del usuario: la RPC
+ * comprueba que esa persona pertenezca a ese colegio antes de tocar nada, para
  * que un id equivocado en la URL no degrade a la dueña de otra cuenta.
  */
 export function useAdminSetMemberRole() {
@@ -132,7 +132,7 @@ export function useAdminSetMemberRole() {
   })
 }
 
-/** Saca a una persona del negocio (no borra su cuenta de acceso). */
+/** Saca a una persona del colegio (no borra su cuenta de acceso). */
 export function useAdminRemoveMember() {
   const qc = useQueryClient()
   return useMutation({
@@ -212,8 +212,8 @@ export function useAdminPlatformAdmins() {
 /**
  * Da acceso de plataforma a una cuenta EXISTENTE, por correo. Devuelve su uid.
  *
- * La RPC exige que esa cuenta no pertenezca a ningún negocio: un super-admin con
- * negocio propio sería juez y parte, y además las políticas cross-tenant piden
+ * La RPC exige que esa cuenta no pertenezca a ningún colegio: un super-admin con
+ * colegio propio sería juez y parte, y además las políticas cross-tenant piden
  * `auth_tenant_id() is null` — no vería nada de todos modos.
  */
 export function useAdminGrantPlatformAdmin() {
@@ -243,7 +243,7 @@ export function useAdminRevokePlatformAdmin() {
   })
 }
 
-// ── Eliminar un negocio (borrado en cascada) ─────────────────────────────────
+// ── Eliminar un colegio (borrado en cascada) ─────────────────────────────────
 
 /**
  * Qué se va a borrar. Se pide al ABRIR el modal, no antes: son una docena de
@@ -268,23 +268,23 @@ export function useAdminTenantPurgePreview(tenantId: string | undefined) {
 }
 
 /**
- * Borra un negocio con todo lo suyo. IRREVERSIBLE.
+ * Borra un colegio con todo lo suyo. IRREVERSIBLE.
  *
  * Dos pasos, en este orden a propósito:
  *   1) La RPC borra la base en UNA transacción (o entra todo, o nada) y devuelve
- *      las rutas de los archivos del negocio.
+ *      las rutas de los archivos del colegio.
  *   2) La app vacía esos archivos con la API de Storage — borrarlos por SQL
  *      dejaría el blob huérfano en el bucket.
  * Si falla el paso 2, los archivos siguen listados y la bitácora dice cuántos
  * eran, así que se puede repetir. Al revés (archivos primero) un fallo de la RPC
- * dejaría a un negocio VIVO sin sus imágenes.
+ * dejaría a un colegio VIVO sin sus imágenes.
  */
 export function useAdminDeleteTenant() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (args: {
       tenant: string
-      /** Nombre del negocio tal cual; el servidor lo vuelve a comprobar. */
+      /** Nombre del colegio tal cual; el servidor lo vuelve a comprobar. */
       confirmName: string
       /** `true` = borra también las cuentas de acceso de sus usuarios. */
       deleteUsers?: boolean
@@ -323,21 +323,21 @@ export function useAdminDeleteTenant() {
     // (corte de red a mitad), el camino de error dejaría en pantalla —y en el
     // cache— una fila que ya no existe.
     onSettled: (_data, _err, args) => {
-      // Las consultas de ESE negocio ya no tienen sujeto: se QUITAN del cache.
+      // Las consultas de ESE colegio ya no tienen sujeto: se QUITAN del cache.
       // `invalidateQueries` solo las marca viejas y las conserva, y el persister
       // las vuelca a localStorage con gcTime de 14 días: quedaría en el disco una
-      // copia legible (nombre, contactos, items, montos) de un negocio que la app
+      // copia legible (nombres de estudiantes, contactos, pagos) de un colegio que la app
       // dice haber borrado del todo.
       qc.removeQueries({
         predicate: (q) =>
           Array.isArray(q.queryKey) &&
           q.queryKey.includes(args.tenant) &&
           // La vista previa NO: el modal sigue montado en este punto y quitarla
-          // la haría renacer y volver a pedirla para un negocio que ya no existe
+          // la haría renacer y volver a pedirla para un colegio que ya no existe
           // (tiene gcTime 0, así que se descarta sola al cerrarse).
           q.queryKey[1] !== 'purge-preview',
       })
-      // La lista de negocios no lleva el id en la clave, así que se le quita la
+      // La lista de colegios no lleva el id en la clave, así que se le quita la
       // fila a mano: si el refetch de abajo falla (acabar sin red es un final muy
       // posible de este propio borrado) quedaría guardada esa misma copia.
       qc.setQueriesData<AdminTenantRow[]>({ queryKey: ['admin', 'tenants'] }, (old) =>
@@ -351,7 +351,7 @@ export function useAdminDeleteTenant() {
   })
 }
 
-/** Negocios ya eliminados: queda el rastro, no los datos. */
+/** Colegios ya eliminados: queda el rastro, no los datos. */
 export function useAdminTenantPurges(limit = 20) {
   return useQuery({
     queryKey: ['admin', 'purges', limit],

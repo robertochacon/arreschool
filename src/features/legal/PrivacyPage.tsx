@@ -15,13 +15,19 @@ import { APP_NAME, LEGAL_PATHS } from '@/lib/constants'
 /**
  * Política de Privacidad pública (ruta `/privacidad`, sin sesión).
  *
- * Está escrita sobre lo que el starter HACE de verdad: cada dato, cada proveedor
- * y cada almacén salieron de leer el esquema (`supabase/migrations`), las Edge
- * Functions y el cliente. No es una plantilla de relleno.
+ * Está escrita sobre lo que ArreSchool HACE de verdad: cada dato, cada
+ * proveedor y cada almacén salieron de leer el esquema (`supabase/migrations`,
+ * incluidas las tablas escolares de 0013-0017), las Edge Functions y el cliente.
+ * No es una plantilla de relleno.
+ *
+ * Lo delicado de este producto es que casi todo el contenido son datos de
+ * MENORES, algunos de salud. Por eso la sección "menores" no es la cláusula de
+ * relleno de siempre ("no es para menores de 18"): explica quién responde por
+ * esos datos (el colegio) y qué hace ArreSchool con ellos (encargo).
  *
  * DOS COSAS ANTES DE PUBLICAR:
- *  1. Rellena todos los <Todo> — son los datos de tu empresa, que el starter no
- *     puede saber. Aparecen resaltados en la propia página para que no se cuelen.
+ *  1. Rellena todos los <Todo> — son los datos de la empresa que opera
+ *     ArreSchool, que el código no puede saber. Aparecen resaltados en la propia página para que no se cuelen.
  *  2. Repasa el documento cada vez que cambies algo que toque datos: un campo
  *     nuevo, otro proveedor de correo, una analítica, una pasarela de cobro. Y
  *     mueve la fecha de UPDATED, que es lo que le dice a la gente que esto se
@@ -54,26 +60,30 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <P>
-          {APP_NAME} es una herramienta que cada negocio usa para llevar sus propios registros. Eso
-          hace que haya dos grupos de datos y que sobre cada uno mande alguien distinto:
+          {APP_NAME} es una plataforma que cada colegio usa para administrar su propia
+          información. Eso hace que haya dos grupos de datos y que sobre cada uno mande alguien
+          distinto:
         </P>
         <Bullets>
           <Li>
-            <strong>Los datos de la cuenta y del negocio.</strong> Quien abre la cuenta y su equipo.
-            De esos datos <strong>respondemos nosotros</strong>: los tratamos para prestar el
-            servicio y cobrar el plan.
+            <strong>Los datos de la cuenta y del colegio como cliente.</strong> Quien abre la
+            cuenta y su equipo (dirección, secretaría, docentes, finanzas). De esos datos{' '}
+            <strong>respondemos nosotros</strong>: los tratamos para prestar el servicio y cobrar
+            el plan.
           </Li>
           <Li>
-            <strong>Lo que cada negocio guarda dentro.</strong> Los registros que carga en la
-            aplicación y que pueden contener datos de terceros (sus clientes, sus proveedores). Ahí{' '}
-            <strong>nosotros solo somos el encargado</strong>: guardamos y procesamos siguiendo las
-            instrucciones del negocio, que es quien decide qué anota y para qué.
+            <strong>Lo que cada colegio guarda dentro.</strong> Los datos de sus estudiantes, de sus
+            familias y de su personal, las asistencias, evaluaciones, boletines, cargos y pagos. Ahí{' '}
+            <strong>el responsable es el colegio y nosotros solo somos el encargado</strong>:
+            guardamos y procesamos siguiendo sus instrucciones, y es el colegio quien decide qué
+            anota, para qué y durante cuánto tiempo.
           </Li>
         </Bullets>
         <Note>
-          <strong>Si tus datos están dentro de la cuenta de un negocio</strong> que usa {APP_NAME},
-          el responsable es ese negocio, no nosotros. Para corregir o borrar algo, háblale primero a
-          él. Si no responde, escríbenos a <MailLink /> y lo contactamos.
+          <strong>Si eres madre, padre o tutor</strong> y tus datos o los de tu hijo o hija están en
+          {' '}{APP_NAME}, quien responde por ellos es el colegio. Para consultarlos, corregirlos o
+          borrarlos, háblale primero al colegio. Si no responde, escríbenos a <MailLink /> y lo
+          contactamos.
         </Note>
       </>
     ),
@@ -97,17 +107,48 @@ const SECTIONS: LegalSection[] = [
           <Li>El plan contratado, su estado y las fechas de inicio y de renovación.</Li>
         </Bullets>
 
-        <H3>Del negocio</H3>
+        <H3>Del colegio</H3>
         <Bullets>
           <Li>
-            Lo que se escribe en Configuración: nombre, logo, teléfono, correo, dirección, moneda e
-            idioma.
+            Lo que se escribe en Configuración: nombre, logo, RNC o registro, nombre de quien dirige,
+            teléfono, correo, dirección, moneda y el texto al pie de los recibos.
           </Li>
-          <Li>Las personas invitadas a administrarlo y el rol de cada una.</Li>
+          <Li>Las personas invitadas al equipo y el rol de cada una.</Li>
           <Li>
-            Los registros que el negocio carga: nombre, descripción, monto, estado y fecha de cada
-            uno, además de quién lo creó.
+            La estructura académica: años escolares, cortes de evaluación, grados, secciones y las
+            fichas del personal docente (nombre, documento, contacto, especialidad).
           </Li>
+        </Bullets>
+
+        <H3>De los estudiantes y sus familias (por encargo del colegio)</H3>
+        <Bullets>
+          <Li>
+            Ficha del estudiante: nombre, matrícula, fecha de nacimiento, sexo, documento de
+            identidad, nacionalidad, dirección, foto y observaciones del colegio.
+          </Li>
+          <Li>
+            <strong>Datos de salud</strong> que el colegio decida registrar: tipo de sangre,
+            alergias y notas médicas. Existen para que el personal sepa cómo cuidar al niño o la
+            niña; son visibles para el equipo del colegio, no para otras familias.
+          </Li>
+          <Li>
+            Documentos que el colegio suba (acta de nacimiento, tarjeta de vacunas, certificados
+            médicos, récords de otros colegios).
+          </Li>
+          <Li>
+            Familia: nombre, documento, teléfonos, correo, ocupación, lugar de trabajo y dirección
+            de padres, madres y tutores; parentesco, quién puede recoger al estudiante, quién es
+            contacto de emergencia y quién responde por los pagos.
+          </Li>
+          <Li>
+            Historial académico: inscripciones por año, sección, asistencia diaria, evaluaciones por
+            indicador, observaciones del personal y boletines emitidos.
+          </Li>
+          <Li>
+            Finanzas: cargos (mensualidades, inscripción, materiales…), pagos recibidos, recibos y
+            anulaciones con su motivo.
+          </Li>
+          <Li>Comunicados que el colegio publica para todo el colegio, un grado o una sección.</Li>
           <Li>
             Una bitácora de actividad: qué acción se hizo, sobre qué, quién la hizo y cuándo. Sirve
             para poder revisar un cambio y para investigar un abuso.
@@ -117,11 +158,11 @@ const SECTIONS: LegalSection[] = [
 
         <H3>Archivos</H3>
         <P>
-          Hay dos almacenes con reglas distintas. El logo del negocio y la foto de perfil van a uno
-          de <strong>lectura pública</strong>: quien tenga la dirección exacta del archivo puede
-          verlo, aunque no tenga cuenta. El resto de archivos que se suban van a un almacén{' '}
-          <strong>privado</strong>, separado por negocio. No subas al primero nada que no quieras que
-          se vea.
+          Hay dos almacenes con reglas distintas. El logo del colegio y la foto de perfil del
+          personal van a uno de <strong>lectura pública</strong>: quien tenga la dirección exacta del
+          archivo puede verlo, aunque no tenga cuenta. <strong>Las fotos de los estudiantes y sus
+          documentos van siempre al almacén privado</strong>, separado por colegio, y solo se abren
+          con enlaces que caducan en minutos.
         </P>
 
         <H3>Datos técnicos</H3>
@@ -152,7 +193,10 @@ const SECTIONS: LegalSection[] = [
     title: 'Para qué los usamos',
     body: (
       <Bullets>
-        <Li>Para prestar el servicio: crear el negocio, guardar sus registros y mostrar el panel.</Li>
+        <Li>
+          Para prestar el servicio al colegio: guardar su información, generar listas, boletines,
+          recibos y reportes, y mostrar el panel.
+        </Li>
         <Li>Para dar acceso a la cuenta y protegerla (inicio de sesión, recuperar contraseña).</Li>
         <Li>Para aplicar los topes del plan contratado y gestionar los cambios de plan.</Li>
         <Li>Para dar soporte cuando alguien nos escribe con un problema.</Li>
@@ -248,7 +292,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <P>
-          Cada negocio está aislado del resto: una cuenta nunca ve los datos de otra.{' '}
+          Cada colegio está aislado del resto: una cuenta nunca ve los datos de otro colegio.{' '}
           <strong>Ese aislamiento lo impone la base de datos</strong>, no la pantalla, así que
           aunque una consulta pidiera datos ajenos no los devolvería.
         </P>
@@ -256,15 +300,17 @@ const SECTIONS: LegalSection[] = [
           Con una excepción que preferimos decir de frente:{' '}
           <strong>
             el equipo que opera la plataforma dispone de un panel de administración que puede
-            consultar la información de cualquier negocio
+            consultar la información de cualquier colegio
           </strong>
           , incluidos sus registros. Lo usamos solo para dar soporte, resolver problemas de cobro y
           frenar abusos. Los <strong>códigos de invitación</strong> quedan fuera de ese panel por
           diseño: quien los tuviera podría entrar a una cuenta ajena.
         </P>
         <P>
-          Si el negocio invita a otras personas a administrarlo, esas personas ven los mismos datos
-          que quien abrió la cuenta. Quitarles el acceso también es cosa suya.
+          Dentro de cada colegio, el acceso depende del <strong>rol</strong> que la Dirección le da
+          a cada persona: una docente ve los datos académicos y escribe asistencia y evaluaciones
+          solo de sus secciones, pero no ve los cobros; finanzas y secretaría ven las cuentas;
+          Dirección y Administración ven todo. Dar y quitar accesos es cosa del colegio.
         </P>
       </>
     ),
@@ -285,8 +331,8 @@ const SECTIONS: LegalSection[] = [
             aplicación.
           </Li>
           <Li>
-            <strong>Una copia de los datos de tu negocio</strong>, para que puedas consultarlos sin
-            señal. Se guarda en claro en el aparato: quien tenga acceso a un teléfono desbloqueado
+            <strong>Una copia de los datos de tu colegio</strong> (incluidas listas de estudiantes),
+            para que puedas consultarlos sin señal. Se guarda en claro en el aparato: quien tenga acceso a un teléfono desbloqueado
             puede llegar a ella.
           </Li>
           <Li>
@@ -314,18 +360,19 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <P>
-          Mientras la cuenta exista. No hay borrado automático: los registros viejos se conservan
-          porque son el historial del negocio.
+          Mientras la cuenta del colegio exista. No hay borrado automático: los años anteriores
+          se conservan porque son el historial académico y contable del colegio, que suele estar
+          obligado a guardarlo.
         </P>
         <Bullets>
           <Li>
-            <strong>Para eliminar una cuenta y su negocio, escríbenos a <MailLink /></strong> desde
+            <strong>Para eliminar una cuenta y su colegio, escríbenos a <MailLink /></strong> desde
             el correo de la cuenta. Al eliminarla se borran los registros, la bitácora, los avisos y
             los archivos subidos, y no se puede deshacer.
           </Li>
           <Li>
             De ese borrado <strong>conservamos una constancia mínima</strong>: la fecha, el nombre
-            del negocio, el correo de quien era su dueño y el número de registros que tenía. Nada
+            del colegio, el correo de quien era su dueño y el número de registros que tenía. Nada
             del contenido. Lo guardamos por obligaciones contables y para prevenir fraudes, durante{' '}
             <Todo>plazo de conservación, p. ej. 5 años</Todo>.
           </Li>
@@ -368,12 +415,12 @@ const SECTIONS: LegalSection[] = [
         <P>
           <strong>Si tienes cuenta:</strong> gran parte lo puedes hacer tú desde Mi perfil y
           Configuración. Para lo demás, escríbenos a <MailLink /> desde el correo de la cuenta.{' '}
-          <strong>Si tus datos están dentro del negocio de otra persona</strong>, pídeselo a ella,
+          <strong>Si tus datos están dentro del colegio de otra persona</strong>, pídeselo a ella,
           que es quien decide sobre ellos; si no obtienes respuesta, escríbenos y la contactamos.
         </P>
         <P>
           Hay límites: no podemos borrar lo que estamos obligados a conservar por ley, ni lo que
-          dejaría a un negocio sin el historial que necesita frente a terceros. Si crees que no
+          dejaría a un colegio sin el historial que necesita frente a terceros. Si crees que no
           atendimos bien tu solicitud, puedes reclamar ante{' '}
           <Todo>autoridad de control competente</Todo>.
         </P>
@@ -388,8 +435,8 @@ const SECTIONS: LegalSection[] = [
         <Bullets>
           <Li>Todo viaja cifrado por HTTPS y se almacena cifrado en los servidores del proveedor.</Li>
           <Li>
-            El aislamiento entre negocios está impuesto en la base de datos: aunque una pantalla
-            tuviera un fallo, la consulta no devolvería datos de otro negocio.
+            El aislamiento entre colegios está impuesto en la base de datos: aunque una pantalla
+            tuviera un fallo, la consulta no devolvería datos de otro colegio.
           </Li>
           <Li>Las contraseñas se guardan cifradas de forma irreversible; ni nosotros las vemos.</Li>
           <Li>
@@ -409,12 +456,37 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'menores',
-    title: 'Menores de edad',
+    title: 'Datos de menores de edad',
     body: (
-      <P>
-        {APP_NAME} es para mayores de 18 años. No abrimos cuentas a menores a sabiendas. Si crees que
-        guardamos datos de un menor sin permiso de quien lo representa, escríbenos y los eliminamos.
-      </P>
+      <>
+        <P>
+          Las cuentas de {APP_NAME} son para el personal de los colegios, siempre mayor de edad. Pero
+          la mayoría de los datos que un colegio guarda son de <strong>sus estudiantes, que son
+          menores</strong>. Por eso:
+        </P>
+        <Bullets>
+          <Li>
+            <strong>El colegio es el responsable</strong> de esos datos y quien debe contar con la
+            autorización de los padres, madres o tutores para registrarlos, incluidos los datos de
+            salud y las fotos. Al usar {APP_NAME}, el colegio declara que la tiene.
+          </Li>
+          <Li>
+            <strong>{APP_NAME} solo los trata por encargo</strong> del colegio, para prestarle el
+            servicio. No los usamos para nada más, no creamos perfiles de los niños, no los usamos
+            para publicidad ni para entrenar sistemas, y no se los damos a nadie fuera de los
+            proveedores descritos arriba.
+          </Li>
+          <Li>
+            Las <strong>fotos y documentos</strong> de estudiantes se guardan en almacenamiento
+            privado y se abren con enlaces temporales; los <strong>datos de salud</strong> solo los
+            ve el equipo del colegio.
+          </Li>
+          <Li>
+            Si eres madre, padre o tutor y quieres acceder, corregir o borrar datos de tu hijo o
+            hija, pídeselo al colegio. Si no obtienes respuesta, escríbenos a <MailLink />.
+          </Li>
+        </Bullets>
+      </>
     ),
   },
   {

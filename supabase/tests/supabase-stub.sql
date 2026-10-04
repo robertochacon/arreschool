@@ -1,7 +1,12 @@
+-- Como en Supabase: las extensiones viven en el esquema `extensions` (no en
+-- public). Así el test atrapa una llamada sin calificar, igual que db push.
+create schema extensions;
+create extension pgcrypto with schema extensions;
 -- Stub mínimo de Supabase para validar migraciones en PGlite.
 create role anon nologin;
 create role authenticated nologin;
 create role service_role nologin bypassrls;
+grant usage on schema extensions to anon, authenticated;
 create schema auth;
 create table auth.users (
   id uuid primary key default gen_random_uuid(),

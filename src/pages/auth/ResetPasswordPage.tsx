@@ -112,7 +112,7 @@ export function ResetPasswordPage() {
       )
       return
     }
-    // Carga el perfil/negocio ANTES de navegar (igual que en el login): con la
+    // Carga el perfil/colegio ANTES de navegar (igual que en el login): con la
     // sesión recién abierta y sin perfil, el guard mandaría a los primeros pasos.
     await refresh()
     toast.success('¡Contraseña actualizada!')

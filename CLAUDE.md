@@ -63,7 +63,7 @@ seguridad.
 **Migraciones**
 
 - Se numeran `NNNN_titulo.sql`, cuatro dígitos, correlativo. La siguiente libre es
-  la que toque después de `0018_platform_school.sql`. Un solo hueco por número.
+  la que toque después de `0019_tenant_update_roles.sql`. Un solo hueco por número.
 - Cabecera `-- ═══ ArreSchool · NNNN · <título> ═══` y una explicación de **por qué**
   existe la migración.
 - Idempotente donde se pueda: `create table if not exists`, `drop policy if exists`,

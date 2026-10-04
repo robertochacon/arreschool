@@ -18,7 +18,7 @@ import { useAdminUpdatePlan, usePlanSettings, type PlanSettingRow } from '@/hook
  * Administración de planes: lo que se anuncia, lo que se cobra y los topes.
  *
  * `plan_settings` es la ÚNICA fuente de verdad: de esta tabla beben los triggers
- * que limitan items y usuarios, la app y la landing pública (que la lee sin
+ * que limitan estudiantes activos y usuarios, la app y la landing pública (que la lee sin
  * sesión). Editar un plan aquí cambia el producto entero, no solo un texto.
  */
 export function PlansCard() {
@@ -63,7 +63,7 @@ export function PlansCard() {
                     <th className="px-4 py-3 font-medium">Plan</th>
                     <th className="px-4 py-3 text-right font-medium">Se anuncia</th>
                     <th className="px-4 py-3 text-right font-medium">En US$</th>
-                    <th className="px-4 py-3 text-right font-medium">Items</th>
+                    <th className="px-4 py-3 text-right font-medium">Estudiantes</th>
                     <th className="px-4 py-3 text-right font-medium">Usuarios</th>
                     <th className="px-4 py-3 font-medium">Estado</th>
                     <th className="px-4 py-3 text-right font-medium">Editar</th>
@@ -82,7 +82,7 @@ export function PlansCard() {
                       <td className="px-4 py-3 text-right font-medium tabular-nums text-slate-800">
                         {p.price_usd > 0 ? usd(p.price_usd) : '—'}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-slate-600">{limit(p.max_items)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-600">{limit(p.max_students)}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-slate-600">{limit(p.max_members)}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
@@ -121,7 +121,7 @@ export function PlansCard() {
                       {p.price_monthly > 0 ? `${money(p.price_monthly)} ${PLAN_PRICE_UNIT}` : 'Gratis'}
                     </DataField>
                     <DataField label="En US$">{p.price_usd > 0 ? usd(p.price_usd) : '—'}</DataField>
-                    <DataField label="Tope de items">{limit(p.max_items)}</DataField>
+                    <DataField label="Tope de estudiantes">{limit(p.max_students)}</DataField>
                     <DataField label="Tope de usuarios">{limit(p.max_members)}</DataField>
                   </DataFields>
                 </DataRow>
@@ -150,7 +150,7 @@ function EditPlanModal({ plan, onClose }: { plan: PlanSettingRow | null; onClose
   const [name, setName] = useState('')
   const [monthly, setMonthly] = useState('')
   const [usdPrice, setUsdPrice] = useState('')
-  const [maxItems, setMaxItems] = useState('')
+  const [maxStudents, setMaxStudents] = useState('')
   const [maxMembers, setMaxMembers] = useState('')
   const [features, setFeatures] = useState('')
   const [order, setOrder] = useState('')
@@ -172,7 +172,7 @@ function EditPlanModal({ plan, onClose }: { plan: PlanSettingRow | null; onClose
     setMonthly(String(plan.price_monthly))
     setUsdPrice(String(plan.price_usd))
     // Vacío = ilimitado, que es como lo guarda la base (NULL, no cero).
-    setMaxItems(plan.max_items == null ? '' : String(plan.max_items))
+    setMaxStudents(plan.max_students == null ? '' : String(plan.max_students))
     setMaxMembers(plan.max_members == null ? '' : String(plan.max_members))
     setFeatures((plan.features ?? []).join('\n'))
     setOrder(String(plan.sort_order))
@@ -193,7 +193,7 @@ function EditPlanModal({ plan, onClose }: { plan: PlanSettingRow | null; onClose
     const fail = (msg: string) => toast.error(msg)
     const badLimit = (v: number | null) => v !== null && (!Number.isInteger(v) || v < 1)
 
-    const items = maxItems.trim() === '' ? null : Number(maxItems)
+    const students = maxStudents.trim() === '' ? null : Number(maxStudents)
     const members = maxMembers.trim() === '' ? null : Number(maxMembers)
     const nOrder = Number(order)
 
@@ -203,13 +203,13 @@ function EditPlanModal({ plan, onClose }: { plan: PlanSettingRow | null; onClose
     if (nMonthly > 0 && nUsd <= 0) {
       return fail('Un plan de pago necesita precio en US$: es lo que cobra la pasarela.')
     }
-    if (badLimit(items) || badLimit(members)) {
+    if (badLimit(students) || badLimit(members)) {
       return fail('Los topes deben ser 1 o más (déjalos vacíos para ilimitado).')
     }
     // La bandera `p_clear_max` de la RPC quita los DOS topes a la vez —
     // «ilimitado» es una propiedad del plan entero, no de cada campo—, así que
     // vaciar solo uno haría desaparecer el otro sin avisar. Se pide de frente.
-    if ((items === null) !== (members === null)) {
+    if ((students === null) !== (members === null)) {
       return fail('«Ilimitado» aplica al plan completo: deja los dos topes vacíos, o pon un número en ambos.')
     }
     if (!Number.isInteger(nOrder) || nOrder < 0) return fail('El orden debe ser un entero de 0 en adelante.')
@@ -220,7 +220,7 @@ function EditPlanModal({ plan, onClose }: { plan: PlanSettingRow | null; onClose
         name: name.trim(),
         price_monthly: nMonthly,
         price_usd: nUsd,
-        max_items: items,
+        max_students: students,
         max_members: members,
         // Una viñeta por línea; las vacías se descartan para que un salto de
         // más no cuele un punto en blanco en la tabla de precios.
@@ -271,8 +271,8 @@ function EditPlanModal({ plan, onClose }: { plan: PlanSettingRow | null; onClose
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Tope de items" hint="Vacío = ilimitado">
-            <Input inputMode="numeric" placeholder="Ilimitado" value={maxItems} onChange={(e) => setMaxItems(e.target.value)} />
+          <Field label="Tope de estudiantes activos" hint="Vacío = ilimitado">
+            <Input inputMode="numeric" placeholder="Ilimitado" value={maxStudents} onChange={(e) => setMaxStudents(e.target.value)} />
           </Field>
           <Field label="Tope de usuarios" hint="Vacío = ilimitado">
             <Input inputMode="numeric" placeholder="Ilimitado" value={maxMembers} onChange={(e) => setMaxMembers(e.target.value)} />
@@ -306,7 +306,7 @@ function EditPlanModal({ plan, onClose }: { plan: PlanSettingRow | null; onClose
           <span className="text-xs text-slate-400">(solo uno a la vez)</span>
         </label>
 
-        {/* Los negocios que ya están en el plan NO se tocan: conservan su
+        {/* Los colegios que ya están en el plan NO se tocan: conservan su
             suscripción y solo notan el tope nuevo la próxima vez que creen algo. */}
         <p className="text-xs text-slate-400">
           El cambio entra en vigor de inmediato para todos: precios, topes y viñetas se leen de esta

@@ -11,10 +11,10 @@ export interface TeamMember {
 }
 
 /**
- * Miembros del negocio.
+ * Miembros del colegio.
  *
  * Sin `.eq('tenant_id', …)`: la RLS de `profiles` ya limita el SELECT al propio
- * negocio. Filtrar aquí además no daría más seguridad y sí una forma de que la
+ * colegio. Filtrar aquí además no daría más seguridad y sí una forma de que la
  * lista salga vacía por un id todavía sin cargar.
  */
 export function useTeamMembers() {
@@ -102,7 +102,7 @@ export function useRevokeInvite() {
 }
 
 /**
- * Canjea un código y devuelve el id del negocio al que se entró.
+ * Canjea un código y devuelve el id del colegio al que se entró.
  *
  * El canje es atómico dentro de la RPC (un UPDATE condicional sobre la fila): dos
  * personas con el mismo enlace no pueden entrar las dos.
@@ -117,9 +117,9 @@ export function useAcceptInvite() {
       return data as string
     },
     onSuccess: async () => {
-      // La cuenta acaba de PASAR de "sin negocio" a tener uno: el perfil que
+      // La cuenta acaba de PASAR de "sin colegio" a tener uno: el perfil que
       // guarda el AuthProvider (y del que dependen los guards de ruta) está
-      // obsoleto, y todo lo cacheado se leyó cuando no había negocio, así que se
+      // obsoleto, y todo lo cacheado se leyó cuando no había colegio, así que se
       // invalida entero en vez de ir clave por clave.
       await refresh()
       await qc.invalidateQueries()
