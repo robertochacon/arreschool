@@ -146,6 +146,8 @@ await as(A, `insert into section_teachers (section_id, teacher_id) values ($1,$2
 ok((await val(T, `select save_attendance($1, current_date, $2::jsonb)`, [sA, JSON.stringify([{ enrollment_id: e1, status: 'present' }])])) === 1, 'docente asignada pasa lista')
 await expectErr(A, `insert into teachers (first_name,last_name,user_id) values ('X','Y',$1)`, /no pertenece/, 'no se enlaza cuenta de otro colegio', [B])
 await expectErr(T, `update profiles set role='owner' where id=$1`, /rol/, 'docente no se auto-asciende', [T])
+ok((await as(T, `update tenants set name='Hackeado' where id=$1`, [tA])).affectedRows === 0, 'docente no edita datos del colegio')
+ok((await as(A, `update tenants set legal_id='101' where id=$1`, [tA])).affectedRows === 1, 'Dirección edita datos del colegio')
 await as(A, `select set_member_role($1,'secretary')`, [T])
 ok((await val(T, `select auth_role()::text`)) === 'secretary', 'owner cambia rol')
 ok((await as(T, `select * from charges`)).rows.length > 0, 'secretaría ve cargos')
