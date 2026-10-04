@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
+  BookOpen,
   CalendarCheck,
   ClipboardList,
   GraduationCap,
@@ -93,6 +94,7 @@ const NAV: NavGroup[] = [
       { to: '/comunicados', label: 'Comunicados', icon: Megaphone },
       { to: '/reportes', label: 'Reportes', icon: BarChart3 },
       { to: '/configuracion', label: 'Configuración', icon: Settings },
+      { to: '/manual', label: 'Manual de usuario', icon: BookOpen },
     ],
   },
 ]

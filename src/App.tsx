@@ -92,6 +92,9 @@ const AnnouncementsPage = lazyWithRetry(() =>
 const ReportsPage = lazyWithRetry(() =>
   import('@/features/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 )
+const UserManualPage = lazyWithRetry(() =>
+  import('@/features/help/UserManualPage').then((m) => ({ default: m.UserManualPage })),
+)
 const SettingsPage = lazyWithRetry(() =>
   import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 )
@@ -311,6 +314,7 @@ export default function App() {
             />
             <Route path="comunicados" element={<AnnouncementsPage />} />
             <Route path="reportes" element={<ReportsPage />} />
+            <Route path="manual" element={<UserManualPage />} />
             <Route path="configuracion" element={<SettingsPage />} />
             <Route path="perfil" element={<ProfilePage />} />
           </Route>
