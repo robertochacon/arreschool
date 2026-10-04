@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, LogOut } from 'lucide-react'
-import { Logo } from '@/components/Logo'
+import { BrandLogo } from '@/components/Logo'
 import { useAuth } from '@/auth/AuthProvider'
 import { APP_TAGLINE, LEGAL_PATHS } from '@/lib/constants'
 
@@ -62,7 +62,7 @@ export function AuthLayout({
 
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
-          <Logo className="h-24 w-24" />
+          <BrandLogo className="h-28 w-auto sm:h-32" />
           <p className="mt-1 text-sm font-medium text-brand-500">{APP_TAGLINE}</p>
         </div>
 

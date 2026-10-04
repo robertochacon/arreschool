@@ -52,8 +52,10 @@ export default defineConfig({
         // Los redirectores de las URL limpias no se precachean: solo sirven
         // cuando NO hay service worker (con él, toda navegación cae en
         // index.html y de /privacidad se encarga src/lib/cleanPaths.ts).
-        // Precachearlos sería peso muerto.
-        globIgnores: ['privacidad/index.html', 'terminos/index.html'],
+        // Precachearlos sería peso muerto. Lo mismo la fuente de los íconos y
+        // la imagen social: una es materia prima de `npm run icons` y la otra
+        // solo la leen WhatsApp/Facebook (añadían ~1 MB a cada instalación).
+        globIgnores: ['privacidad/index.html', 'terminos/index.html', 'logo.png', 'og.png'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [

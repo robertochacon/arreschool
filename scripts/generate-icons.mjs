@@ -9,6 +9,7 @@
 import { access, mkdir, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { existsSync } from 'node:fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '..')
@@ -137,9 +138,17 @@ async function main() {
   // compartir el enlace por WhatsApp, Facebook o LinkedIn.
   const OG_W = 1200
   const OG_H = 630
-  const ogLogoSize = 300
-  const ogLogo = await sharp(SRC)
-    .resize(ogLogoSize, ogLogoSize, { fit: 'contain', background: WHITE })
+  // El logo COMPLETO (emblema + «ArreSchool», versión recortada y con fondo
+  // transparente de src/assets/brand/) si existe; si no, el
+  // emblema cuadrado. Con el logotipo ya dentro de la imagen, el SVG solo pone
+  // el lema: escribir el nombre otra vez sería redundante.
+  const WORDMARK = path.join(root, 'src', 'assets', 'brand', 'logo.png')
+  const hasWordmark = existsSync(WORDMARK)
+  const ogLogoW = hasWordmark ? 520 : 300
+  const ogLogoH = hasWordmark ? 390 : 300
+  const ogLogo = await sharp(hasWordmark ? WORDMARK : SRC)
+    .trim({ threshold: 12 })
+    .resize(ogLogoW, ogLogoH, { fit: 'contain', background: WHITE })
     .flatten({ background: WHITE })
     .png()
     .toBuffer()
@@ -148,9 +157,9 @@ async function main() {
     <rect width="100%" height="100%" fill="#ffffff"/>
     <rect x="0" y="0" width="14" height="${OG_H}" fill="${BRAND}"/>
     <g font-family="DejaVu Sans, Arial, Helvetica, sans-serif">
-      <text x="470" y="262" font-size="94" font-weight="800" fill="${BRAND}">ArreSchool</text>
-      <text x="472" y="332" font-size="42" font-weight="700" fill="${INK}">Administra tu negocio desde el celular</text>
-      <text x="472" y="396" font-size="27" font-weight="500" fill="${MUTED}">Registros · equipo · planes · reportes</text>
+      <text x="660" y="280" font-size="46" font-weight="800" fill="${INK}">Tu colegio, en orden</text>
+      <text x="660" y="340" font-size="27" font-weight="500" fill="${MUTED}">Estudiantes · Académico</text>
+      <text x="660" y="380" font-size="27" font-weight="500" fill="${MUTED}">Finanzas · Familias</text>
     </g>
   </svg>`
 
@@ -159,7 +168,7 @@ async function main() {
   // vale un build roto: se avisa y se sigue.
   try {
     await sharp(Buffer.from(ogSvg))
-      .composite([{ input: ogLogo, left: 100, top: Math.round((OG_H - ogLogoSize) / 2) }])
+      .composite([{ input: ogLogo, left: 90, top: Math.round((OG_H - ogLogoH) / 2) }])
       .png()
       .toFile(path.join(root, 'public', 'og.png'))
     console.log('✓ og.png')
