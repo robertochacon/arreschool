@@ -12,7 +12,7 @@ import type { AttendanceReportRow, EnrollmentReportRow, IncomeReport } from '@/t
 export function useAttendanceReport(from: string, to: string, sectionId: string | null) {
   return useQuery({
     queryKey: ['report', 'attendance', from, to, sectionId],
-    enabled: Boolean(from && to),
+    enabled: Boolean(from && to && from <= to),
     queryFn: async (): Promise<AttendanceReportRow[]> => {
       const { data, error } = await supabase.rpc('report_attendance', {
         p_from: from,
@@ -37,7 +37,7 @@ const EMPTY_INCOME: IncomeReport = {
 export function useIncomeReport(from: string, to: string, enabled = true) {
   return useQuery({
     queryKey: ['report', 'income', from, to],
-    enabled: enabled && Boolean(from && to),
+    enabled: enabled && Boolean(from && to && from <= to),
     queryFn: async (): Promise<IncomeReport> => {
       const { data, error } = await supabase.rpc('report_income', { p_from: from, p_to: to })
       if (error) throw error

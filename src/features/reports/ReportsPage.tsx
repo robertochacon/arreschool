@@ -1,5 +1,5 @@
 import { useMemo, useState, type ComponentType, type ReactNode } from 'react'
-import { BarChart3, Printer, TriangleAlert } from 'lucide-react'
+import { BarChart3, TriangleAlert } from 'lucide-react'
 import { useAuth } from '@/auth/AuthProvider'
 import { usePermissions } from '@/lib/permissions'
 import { useAttendanceReport, useEnrollmentReport, useIncomeReport } from '@/hooks/reports'
@@ -7,7 +7,6 @@ import { useStudentAccounts } from '@/hooks/finance'
 import { sectionLabel, useCurrentPeriod, useSections } from '@/hooks/academic'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, CardHeader } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Field, Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -19,11 +18,12 @@ import { PAYMENT_METHOD_LABEL } from '@/lib/constants'
 import { errorMessage } from '@/lib/errors'
 import { fmtDateShort, money, num } from '@/lib/format'
 import { cn } from '@/lib/cn'
+import { ReportDetails } from './ReportDetails'
 import { isoMonthEnd, isoMonthStart, isoToday } from '@/features/finance/financeUi'
 
 /**
- * ArreSchool Reports. Cada pestaña es UNA RPC `security invoker`: la base
- * nunca devuelve más de lo que quien pregunta ya puede leer. Las pestañas de
+ * ArreSchool Reports. Los resúmenes usan RPC `security invoker` y los detalles
+ * consultan tablas con RLS: solo se devuelven registros que el usuario puede leer. Las pestañas de
  * dinero, además, ni se ofrecen a quien no maneja finanzas.
  *
  * Imprimir usa el diálogo del navegador: el marco de la app no sale en papel y
@@ -61,18 +61,13 @@ export function ReportsPage() {
     ingresos: IncomeReportView,
     cobros: ReceivablesReport,
   }
-  const View = VIEW[tab]
+  const View = VIEW[!finance && (tab === 'ingresos' || tab === 'cobros') ? 'asistencia' : tab]
 
   return (
     <div>
       <PageHeader
         title="Reportes"
         description="Asistencia, matrícula y finanzas del colegio"
-        action={
-          <Button variant="outline" onClick={() => window.print()} className="print:hidden">
-            <Printer className="h-4 w-4" /> Imprimir
-          </Button>
-        }
       />
       <div className="mb-5 print:hidden">
         <Segmented label="Tipo de reporte" value={tab} onChange={setTab} options={tabs} />
@@ -141,6 +136,7 @@ function AttendanceReport() {
   const [sectionId, setSectionId] = useState('')
   const { data, isLoading, isError, error } = useAttendanceReport(from, to, sectionId || null)
 
+  const selectedSection = (sections ?? []).find((s) => s.id === sectionId)
   const rows = data ?? []
   const low = rows.filter((r) => r.rate !== null && r.rate < LOW_ATTENDANCE).length
   const totals = rows.reduce(
@@ -164,6 +160,11 @@ function AttendanceReport() {
         </Field>
       </Range>
 
+      <ReportDetails
+        filters={{ type: 'asistencia', from, to, sectionId }} title="Asistencia"
+        context={`${from} al ${to} · ${sectionId ? (selectedSection ? sectionLabel(selectedSection) : 'Sección seleccionada') : 'Todas las secciones'}`}
+        disabled={!from || !to || from > to || isLoading || isError}
+      />
       <p className="mb-3 hidden text-sm text-slate-600 print:block">
         Asistencia del {fmtDateShort(from)} al {fmtDateShort(to)}
       </p>
@@ -288,6 +289,9 @@ function EnrollmentReport() {
         </Field>
       </div>
 
+      <ReportDetails filters={{ type: 'matricula', periodId: effective ?? '' }} title="Matrícula"
+        context={`Año escolar ${periods.find((p) => p.id === effective)?.name ?? 'Sin seleccionar'} · Todos los estados de inscripción`}
+        disabled={!effective || isLoading || isError} />
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Inscritos" value={num(enrolled)} icon={<BarChart3 className="h-5 w-5" />} />
         <StatCard
@@ -349,8 +353,11 @@ function IncomeReportView() {
   const [to, setTo] = useState(isoMonthEnd())
   const { data, isLoading, isError, error } = useIncomeReport(from, to)
 
-  if (isLoading) return <PageLoader label="Sumando ingresos…" />
-  if (isError || !data) return <Card><Failed error={error} /></Card>
+  if (isLoading || isError || !data) return <div>
+    <Range from={from} to={to} onFrom={setFrom} onTo={setTo} />
+    {isLoading ? <PageLoader label="Sumando ingresos…" /> : isError ? <Card><Failed error={error} /></Card> :
+      <p className="text-sm text-slate-500">Selecciona un rango de fechas válido.</p>}
+  </div>
 
   const maxMethod = Math.max(0, ...data.by_method.map((m) => m.total))
   const maxConcept = Math.max(0, ...data.by_concept.map((c) => c.total))
@@ -359,6 +366,8 @@ function IncomeReportView() {
   return (
     <div>
       <Range from={from} to={to} onFrom={setFrom} onTo={setTo} />
+      <ReportDetails filters={{ type: 'ingresos', from, to }} title="Ingresos"
+        context={`${from} al ${to} · Pagos válidos`} disabled={!from || !to || from > to} />
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard label="Cobrado" value={money(data.total, currency)} icon={<BarChart3 className="h-5 w-5" />} tone="green" />
         <StatCard label="Pagos" value={num(data.count)} icon={<BarChart3 className="h-5 w-5" />} />
@@ -450,6 +459,8 @@ function ReceivablesReport() {
 
   return (
     <div>
+      <ReportDetails filters={{ type: 'cobros', today: isoToday() }} title="Por cobrar"
+        context={`Al ${isoToday()} · Cargos pendientes y abonados`} />
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard label="Por cobrar" value={money(total, currency)} icon={<BarChart3 className="h-5 w-5" />} tone="amber" />
         <StatCard label="Vencido" value={money(overdue, currency)} icon={<TriangleAlert className="h-5 w-5" />} tone="red" />
