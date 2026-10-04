@@ -38,17 +38,19 @@ const STATUSES: AttendanceStatus[] = ['present', 'absent', 'late', 'excused']
 
 /** Color de cada estado cuando está marcado. Record completo: un estado nuevo sin color no compila. */
 const STATUS_ON: Record<AttendanceStatus, string> = {
-  present: 'border-emerald-500 bg-emerald-500 text-white',
+  // Colores del logo (verde hoja, naranja, cielo) en sus tonos con contraste;
+  // la ausencia se queda en rojo: es la que tiene que saltar a la vista.
+  present: 'border-arre-leaf-deep bg-arre-leaf-deep text-white',
   absent: 'border-red-500 bg-red-500 text-white',
-  late: 'border-amber-400 bg-amber-400 text-amber-950',
-  excused: 'border-sky-500 bg-sky-500 text-white',
+  late: 'border-accent-400 bg-accent-400 text-brand-950',
+  excused: 'border-brand-500 bg-brand-500 text-white',
 }
 
 const SUMMARY_TONE: Record<AttendanceStatus, string> = {
-  present: 'text-emerald-600',
+  present: 'text-arre-leaf-deep',
   absent: 'text-red-600',
-  late: 'text-amber-600',
-  excused: 'text-sky-600',
+  late: 'text-accent-600',
+  excused: 'text-brand-500',
 }
 
 /** Cambio pendiente de una fila: estado (null = borrar la marca) y nota. */

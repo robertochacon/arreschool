@@ -344,7 +344,7 @@ function Hero() {
               'Cada colegio con sus datos aparte',
             ].map((t) => (
               <li key={t} className="flex items-center gap-2 font-semibold">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-arre-leaf text-white">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-arre-leaf-deep text-white">
                   <Check className="h-3.5 w-3.5" strokeWidth={3} />
                 </span>
                 {t}
@@ -383,8 +383,8 @@ function CubbyBoard() {
     { name: 'Lucas T.', hue: 'teal', status: 'arrived', time: '7:55', tag: { icon: Users, text: 'Lo recoge: abuela' } },
   ]
   const STATUS: Record<'arrived' | 'late' | 'absent', { label: string; cls: string }> = {
-    arrived: { label: 'Llegó', cls: 'bg-arre-leaf text-white' },
-    late: { label: 'Tardanza', cls: 'bg-arre-orange text-white' },
+    arrived: { label: 'Llegó', cls: 'bg-arre-leaf-deep text-white' },
+    late: { label: 'Tardanza', cls: 'bg-arre-orange text-arre-ink' },
     absent: { label: 'Ausente', cls: 'bg-slate-200 text-slate-600' },
   }
 
@@ -646,9 +646,9 @@ function Areas() {
 /* ── Boletín de muestra ─────────────────────────────────────────────────── */
 
 const LEVEL_CHIP: Record<AchievementLevel, string> = {
-  achieved: 'bg-arre-leaf text-white',
-  in_progress: 'bg-arre-orange text-white',
-  started: 'bg-arre-sky text-white',
+  achieved: 'bg-arre-leaf-deep text-white',
+  in_progress: 'bg-arre-orange text-arre-ink',
+  started: 'bg-brand-500 text-white',
 }
 
 function ReportCardSection() {
@@ -857,7 +857,7 @@ function PlanCard({ plan }: { plan: PlanInfo }) {
       }
     >
       {destacado && (
-        <span className="absolute -top-3 left-8 whitespace-nowrap rounded-full bg-arre-orange px-4 py-1 text-sm font-bold text-white">
+        <span className="absolute -top-3 left-8 whitespace-nowrap rounded-full bg-arre-orange px-4 py-1 text-sm font-bold text-arre-ink">
           Recomendado
         </span>
       )}
@@ -876,7 +876,7 @@ function PlanCard({ plan }: { plan: PlanInfo }) {
             <span
               className={cn(
                 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
-                destacado ? 'bg-arre-orange text-white' : 'bg-arre-leaf text-white',
+                destacado ? 'bg-arre-orange text-arre-ink' : 'bg-arre-leaf-deep text-white',
               )}
             >
               <Check className="h-3.5 w-3.5" strokeWidth={3} />
@@ -889,7 +889,7 @@ function PlanCard({ plan }: { plan: PlanInfo }) {
         to="/registro"
         className={
           destacado
-            ? 'mt-8 inline-flex w-full items-center justify-center rounded-full bg-arre-orange py-3.5 text-lg font-bold text-white transition-colors hover:bg-[#E07F0A]'
+            ? 'mt-8 inline-flex w-full items-center justify-center rounded-full bg-arre-orange py-3.5 text-lg font-bold text-arre-ink transition-colors hover:bg-accent-300'
             : 'mt-8 inline-flex w-full items-center justify-center rounded-full border-2 border-arre-navy py-3.5 text-lg font-bold text-arre-navy transition-colors hover:bg-arre-navy hover:text-white'
         }
       >
@@ -979,7 +979,7 @@ function FinalCta() {
         </div>
         <Link
           to="/registro"
-          className="inline-flex shrink-0 items-center justify-center rounded-full bg-arre-orange px-9 py-4 text-lg font-bold text-white transition-colors hover:bg-[#E07F0A] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-arre-orange px-9 py-4 text-lg font-bold text-arre-ink transition-colors hover:bg-accent-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/50"
         >
           Crear mi colegio gratis
         </Link>

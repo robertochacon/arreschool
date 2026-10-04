@@ -78,8 +78,8 @@ export function Wordmark({
       )}
       {/* Dos tonos como el logotipo: «Arre» oscuro y «School» claro. */}
       <span className="truncate text-lg font-extrabold tracking-tight">
-        <span className={dark ? 'text-white' : 'text-brand-800'}>Arre</span>
-        <span className={dark ? 'text-sky-300' : 'text-sky-500'}>School</span>
+        <span className={dark ? 'text-white' : 'text-brand-600'}>Arre</span>
+        <span className={dark ? 'text-brand-300' : 'text-brand-400'}>School</span>
       </span>
     </div>
   )

@@ -22,8 +22,8 @@ const OUT = path.join(root, 'public', 'icons')
 const WHITE = { r: 255, g: 255, b: 255, alpha: 1 }
 
 // Colores de marca (gemelos de tailwind.config.js) para la imagen social.
-const BRAND = '#2563eb'
-const INK = '#172554'
+const BRAND = '#0b4aa8'
+const INK = '#0e2a5c'
 const MUTED = '#64748b'
 
 /**

@@ -4,22 +4,40 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta de marca del starter: azul neutro, pensado para reemplazarse
-        // entero al adoptar la identidad real (los componentes solo usan los
-        // nombres brand-*/accent-*, nunca hex sueltos, así que cambiar estas
-        // dos escalas re-tematiza toda la app).
+        // Paleta de marca CONSTRUIDA SOBRE EL LOGO. Los componentes solo usan
+        // los nombres brand-*/accent-*, nunca hex sueltos, así que estas dos
+        // escalas re-tematizan toda la app. Anclas exactas del logo:
+        //   400 = cielo de «School» · 600 = azul del birrete · 900 = tinta.
+        // 500 queda entre ambos para texto/íconos que deben leerse sobre blanco
+        // (el cielo puro no llega a 4.5:1 como texto).
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb', // azul principal (botones, enlaces, theme-color)
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: '#eef7fe',
+          100: '#d6ecfc',
+          200: '#addaf8',
+          300: '#74bff2',
+          400: '#1e9be8', // cielo del logo
+          500: '#1474d0',
+          600: '#0b4aa8', // azul del birrete: botones, enlaces, theme-color
+          700: '#093d8c',
+          800: '#0b3373',
+          900: '#0e2a5c', // tinta (texto de la landing)
+          950: '#091c40',
+        },
+        // Naranja del logo (el niño de la derecha y la borla): avisos,
+        // destacados y el plan recomendado. Sobre accent-400 el texto va
+        // OSCURO (brand-950/arre-ink): el blanco no llega a 3:1.
+        accent: {
+          50: '#fff6eb',
+          100: '#fee9cc',
+          200: '#fdd199',
+          300: '#fbb55c',
+          400: '#f7931e', // naranja del logo
+          500: '#e57c0a',
+          600: '#c46a00',
+          700: '#9e5400',
+          800: '#7d4306',
+          900: '#66380a',
+          950: '#3a1e02',
         },
         // Colores del LOGO de ArreSchool, con nombre propio. Los usa la landing
         // (que habla el idioma visual de la marca); la app sigue con brand/accent.
@@ -30,21 +48,11 @@ export default {
           teal: '#14B3A3', // el niño de la izquierda
           orange: '#F7931E', // el niño de la derecha y la borla
           leaf: '#45B649', // la página derecha del libro
+          // Versiones profundas para RELLENOS CON TEXTO blanco encima (estados,
+          // niveles de evaluación): las del logo no llegan a 4.5:1.
+          'leaf-deep': '#2E8A35',
+          'orange-deep': '#C46A00',
           paper: '#F4FAFF', // fondo: blanco con un punto de cielo
-        },
-        // Ámbar de apoyo: avisos, destacados y el plan recomendado.
-        accent: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
-          950: '#451a03',
         },
       },
       fontFamily: {
@@ -66,8 +74,8 @@ export default {
       boxShadow: {
         // Sombras tintadas con el navy de la marca en vez de negro puro: sobre
         // fondos claros el gris neutro se ve sucio.
-        card: '0 1px 2px 0 rgb(23 37 84 / 0.04), 0 4px 16px -2px rgb(23 37 84 / 0.08)',
-        'card-hover': '0 2px 4px 0 rgb(23 37 84 / 0.06), 0 12px 28px -6px rgb(23 37 84 / 0.14)',
+        card: '0 1px 2px 0 rgb(14 42 92 / 0.04), 0 4px 16px -2px rgb(14 42 92 / 0.08)',
+        'card-hover': '0 2px 4px 0 rgb(14 42 92 / 0.06), 0 12px 28px -6px rgb(14 42 92 / 0.14)',
       },
       borderRadius: {
         xl: '0.9rem',

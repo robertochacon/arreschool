@@ -35,14 +35,14 @@ export function welcomeEmail({ name, siteUrl }: { name: string; siteUrl: string 
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(23,37,84,0.08);">
             <tr>
-              <td style="background:#172554;padding:26px;text-align:center;">
+              <td style="background:#0e2a5c;padding:26px;text-align:center;">
                 <span style="color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">ArreSchool</span>
                 <div style="color:#93c5fd;font-size:12px;margin-top:4px;">Gestión escolar sencilla</div>
               </td>
             </tr>
             <tr>
               <td style="padding:32px 28px;">
-                <h1 style="margin:0 0 12px;font-size:20px;color:#172554;">${hello}</h1>
+                <h1 style="margin:0 0 12px;font-size:20px;color:#0e2a5c;">${hello}</h1>
                 <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#334155;">
                   Tu cuenta ya está lista: no tienes que confirmar nada. Entra y
                   empieza a llevar tu colegio sin cuadernos ni hojas de cálculo.
@@ -54,7 +54,7 @@ export function welcomeEmail({ name, siteUrl }: { name: string; siteUrl: string 
                 </ul>
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 22px;">
                   <tr>
-                    <td style="border-radius:12px;background:#2563eb;">
+                    <td style="border-radius:12px;background:#0b4aa8;">
                       <a href="${site}" style="display:inline-block;padding:14px 30px;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:12px;">Entrar a ArreSchool</a>
                     </td>
                   </tr>

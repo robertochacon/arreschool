@@ -28,7 +28,7 @@ export default defineConfig({
         name: 'ArreSchool',
         short_name: 'ArreSchool',
         description: 'Administra tu negocio desde el celular.',
-        theme_color: '#2563eb',
+        theme_color: '#0b4aa8',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',

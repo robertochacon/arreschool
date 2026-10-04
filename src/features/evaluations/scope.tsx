@@ -140,9 +140,11 @@ export function ScopeGate({ scope, children }: { scope: EvaluationScope; childre
  * decidir su color rompe la compilación en vez de pintarlo gris.
  */
 export const LEVEL_ACTIVE: Record<AchievementLevel, string> = {
-  achieved: 'border-emerald-600 bg-emerald-600 text-white',
-  in_progress: 'border-amber-500 bg-amber-500 text-white',
-  started: 'border-sky-600 bg-sky-600 text-white',
+  // Mismos colores que el boletín de la landing: L verde hoja, EP naranja,
+  // I azul. Sobre el naranja el texto va oscuro (el blanco no llega a 3:1).
+  achieved: 'border-arre-leaf-deep bg-arre-leaf-deep text-white',
+  in_progress: 'border-accent-400 bg-accent-400 text-brand-950',
+  started: 'border-brand-500 bg-brand-500 text-white',
 }
 
 export const LEVEL_BADGE: Record<AchievementLevel, 'green' | 'amber' | 'brand'> = {
