@@ -32,9 +32,10 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-# Site URL del proyecto HOSTED: el dominio propio de producción, a donde
-# apuntan los correos cuando no se pide otra cosa.
-site_url = "https://arreschool.com/"
+# Site URL del proyecto HOSTED: a donde apuntan los correos cuando no se pide
+# otra cosa. Hoy la producción es GitHub Pages; cuando haya dominio propio
+# (arreschool.com), cámbialo aquí y en la consola de Supabase.
+site_url = "https://robertochacon.github.io/arreschool/"
 # TODO `redirectTo` que use la app (recuperación de contraseña, confirmación,
 # retorno de Google) tiene que estar en esta lista o GoTrue lo IGNORA en
 # silencio y manda al site_url — es decir, a producción, aunque estés en local.
@@ -49,8 +50,10 @@ additional_redirect_urls = [
   "https://arreschool.com/",
   "https://arreschool.com",
   "https://arreschool.com/**",
-  # Si además despliegas en una "project page" de GitHub Pages, añade aquí las
-  # tres variantes de https://usuario.github.io/mi-repo — mismo motivo.
+  # GitHub Pages (project page): las tres variantes, por el mismo motivo.
+  "https://robertochacon.github.io/arreschool/",
+  "https://robertochacon.github.io/arreschool",
+  "https://robertochacon.github.io/arreschool/**",
   "http://localhost:5173",
   "http://localhost:5173/**",
   "http://127.0.0.1:5173/**",
