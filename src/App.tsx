@@ -6,6 +6,7 @@ import { Layout } from '@/components/Layout'
 import { Logo } from '@/components/Logo'
 import { Spinner } from '@/components/ui/misc'
 import { LEGAL_PATHS } from '@/lib/constants'
+import { usePermissions, type Permission } from '@/lib/permissions'
 
 // Las pantallas de autenticación van en el bundle principal (sin lazy): son lo
 // PRIMERO que ve quien no tiene sesión, y diferirlas añade un viaje de red justo
@@ -55,8 +56,41 @@ function lazyWithRetry<T extends ComponentType<unknown>>(factory: () => Promise<
 const DashboardPage = lazyWithRetry(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
-const ItemsPage = lazyWithRetry(() =>
-  import('@/features/items/ItemsPage').then((m) => ({ default: m.ItemsPage })),
+const StudentsPage = lazyWithRetry(() =>
+  import('@/features/students/StudentsPage').then((m) => ({ default: m.StudentsPage })),
+)
+const StudentDetailPage = lazyWithRetry(() =>
+  import('@/features/students/StudentDetailPage').then((m) => ({ default: m.StudentDetailPage })),
+)
+const FamiliesPage = lazyWithRetry(() =>
+  import('@/features/families/FamiliesPage').then((m) => ({ default: m.FamiliesPage })),
+)
+const EnrollmentsPage = lazyWithRetry(() =>
+  import('@/features/academic/EnrollmentsPage').then((m) => ({ default: m.EnrollmentsPage })),
+)
+const AcademicPage = lazyWithRetry(() =>
+  import('@/features/academic/AcademicPage').then((m) => ({ default: m.AcademicPage })),
+)
+const AttendancePage = lazyWithRetry(() =>
+  import('@/features/attendance/AttendancePage').then((m) => ({ default: m.AttendancePage })),
+)
+const EvaluationsPage = lazyWithRetry(() =>
+  import('@/features/evaluations/EvaluationsPage').then((m) => ({ default: m.EvaluationsPage })),
+)
+const ReportCardPage = lazyWithRetry(() =>
+  import('@/features/evaluations/ReportCardPage').then((m) => ({ default: m.ReportCardPage })),
+)
+const FinancePage = lazyWithRetry(() =>
+  import('@/features/finance/FinancePage').then((m) => ({ default: m.FinancePage })),
+)
+const ReceiptPage = lazyWithRetry(() =>
+  import('@/features/finance/ReceiptPage').then((m) => ({ default: m.ReceiptPage })),
+)
+const AnnouncementsPage = lazyWithRetry(() =>
+  import('@/features/announcements/AnnouncementsPage').then((m) => ({ default: m.AnnouncementsPage })),
+)
+const ReportsPage = lazyWithRetry(() =>
+  import('@/features/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 )
 const SettingsPage = lazyWithRetry(() =>
   import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
@@ -115,7 +149,7 @@ function SuspendedScreen() {
       <Logo className="h-14 w-14 opacity-70" />
       <h1 className="text-lg font-bold text-slate-900">Cuenta suspendida</h1>
       <p className="max-w-sm text-sm text-slate-500">
-        El acceso a <span className="font-medium">{tenant?.name}</span> está temporalmente
+        El acceso a <span className="font-medium">{tenant?.name}</span> en ArreSchool está temporalmente
         suspendido. Contacta al administrador de la plataforma para reactivarlo.
       </p>
       <button
@@ -158,6 +192,17 @@ function RequirePlatformAdmin({ children }: { children: ReactNode }) {
   // el super-admin quedaría expulsado de su propio panel cada vez que recargue.
   if (!contextReady) return <FullLoader />
   if (!isPlatformAdmin) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
+/**
+ * Pantalla solo para ciertos roles (Finanzas, Inscripciones…). Quien no tiene el
+ * permiso vuelve al inicio en vez de ver una pantalla que la base dejaría
+ * vacía o rechazaría al guardar.
+ */
+function RequirePermission({ permission, children }: { permission: Permission; children: ReactNode }) {
+  const { can } = usePermissions()
+  if (!can(permission)) return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -233,7 +278,39 @@ export default function App() {
           {/* App protegida */}
           <Route element={<ProtectedLayout />}>
             <Route index element={<DashboardPage />} />
-            <Route path="items" element={<ItemsPage />} />
+            <Route path="estudiantes" element={<StudentsPage />} />
+            <Route path="estudiantes/:id" element={<StudentDetailPage />} />
+            <Route path="familias" element={<FamiliesPage />} />
+            <Route
+              path="inscripciones"
+              element={
+                <RequirePermission permission="manageStudents">
+                  <EnrollmentsPage />
+                </RequirePermission>
+              }
+            />
+            <Route path="academico" element={<AcademicPage />} />
+            <Route path="asistencia" element={<AttendancePage />} />
+            <Route path="evaluaciones" element={<EvaluationsPage />} />
+            <Route path="evaluaciones/boletin/:id" element={<ReportCardPage />} />
+            <Route
+              path="finanzas"
+              element={
+                <RequirePermission permission="handleFinance">
+                  <FinancePage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="finanzas/recibo/:id"
+              element={
+                <RequirePermission permission="handleFinance">
+                  <ReceiptPage />
+                </RequirePermission>
+              }
+            />
+            <Route path="comunicados" element={<AnnouncementsPage />} />
+            <Route path="reportes" element={<ReportsPage />} />
             <Route path="configuracion" element={<SettingsPage />} />
             <Route path="perfil" element={<ProfilePage />} />
           </Route>
