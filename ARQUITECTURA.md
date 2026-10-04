@@ -1,13 +1,14 @@
-# Arquitectura del starter — CONTRATO VINCULANTE
+# Arquitectura de ArreSchool — CONTRATO VINCULANTE
 
 Este documento es la **fuente de verdad** del proyecto. Todo archivo generado
 debe respetarlo al pie de la letra: nombres de tablas, firmas de RPC, nombres de
 tipos TypeScript, rutas de archivo, claves de cache y variables de entorno.
 Si algo no está aquí, sigue el patrón del archivo hermano más cercano.
 
-Destilado de MisanRD (`/Users/robertochacona/Documents/Projects/MisanRD`), que es
-la referencia viva: cuando dudes de un detalle de implementación, **lee el archivo
-equivalente allí** y adáptalo quitando el dominio (sanes/participantes/pagos).
+ArreSchool parte de `saas-starter` (destilado a su vez de MisanRD). §0–§13
+describen la PLATAFORMA heredada (tenants, planes, super-admin, PWA); **§14
+describe el dominio escolar** y manda sobre cualquier mención a `items`, que se
+retiró en la migración 0018.
 
 ---
 
@@ -19,11 +20,12 @@ equivalente allí** y adáptalo quitando el dominio (sanes/participantes/pagos).
 | Slug de máquina | `arreschool` | claves de storage, `project_id`, package name |
 | Paquete npm | `saas-starter` | `package.json` name |
 | Dominio ejemplo | `https://arreschool.com` | `index.html`, `config.toml` |
-| Entidad de dominio de ejemplo | `items` / `Item` | tabla, tipo, hooks, feature |
+| Dominio | Colegios (tenant = colegio) | ver §14 |
 
-`scripts/rename.mjs` reemplaza `ArreSchool`/`arreschool` en todo el repo. **Nunca**
-escribas "MisanRD", "san", "sanes", "participante", "cuota", "moroso" ni "PayPal"
-en el código generado: el starter es genérico.
+Nombre oficial: **ArreSchool** (ArreSchool Admin, Teacher, Family, Pay,
+Reports). **Nunca** escribas el nombre anterior del proyecto (Nunurd), ni
+"MisanRD", "san", "sanes" o "PayPal" en el código. En la interfaz se dice
+"colegio", no "negocio".
 
 Idioma: **comentarios y textos de UI en español**. Identificadores en inglés.
 
@@ -40,7 +42,10 @@ Idioma: **comentarios y textos de UI en español**. Identificadores en inglés.
 - `react-hook-form` + `zod` + `@hookform/resolvers`
 - `lucide-react`, `clsx`, `date-fns`
 - `vite-plugin-pwa` (workbox)
-- Backend: Supabase (Postgres + Auth + Storage + RLS + Edge Functions Deno)
+- Backend: Supabase (Postgres + Auth + Storage + RLS + Edge Functions Deno).
+  **Sin servidor de API propio** (ni Hono ni Express): toda regla vive en
+  Postgres y el tenant sale del JWT vía `auth_tenant_id()`.
+- Dev: `@electric-sql/pglite` solo para `npm run test:db` (Postgres en memoria).
 
 Alias `@/` → `src/`, declarado **en `vite.config.ts` Y en `tsconfig.app.json`**.
 
@@ -99,7 +104,9 @@ current_period_end timestamptz
 updated_at timestamptz not null default now()
 ```
 
-**`items`** — ENTIDAD DE EJEMPLO. Es el molde que copiará quien use el starter.
+**`items`** — ENTIDAD DE EJEMPLO DEL STARTER, **RETIRADA en 0018** (junto con
+`item_status`, `enforce_item_limit` y `enforce_item_consistency`). Se conserva la
+descripción porque 0001–0011 la siguen creando antes de que 0018 la borre.
 Debe demostrar el patrón completo: tenant_id + RLS + tope de plan + guard de
 consistencia + updated_at.
 ```
@@ -611,3 +618,130 @@ docs    README.md CLAUDE.md ARQUITECTURA.md (este archivo)
 - Sin `any` salvo en fronteras con datos crudos, y ahí acotado con un cast comentado.
 - Comentarios que expliquen **por qué**, al estilo de MisanRD. No comentar lo obvio.
 - Todo `.rpc()` y `.from()` comprueba `error` y lo lanza.
+
+
+---
+
+## 14. Dominio escolar (migraciones 0012–0018)
+
+### 14.1 Principios (no negociables)
+
+1. **Tenant = colegio.** El cliente nunca manda `tenant_id`: cada tabla lo toma de
+   `default auth_tenant_id()` y `enforce_tenant_row()` rechaza otro valor (INSERT
+   y UPDATE). Nunca un `tenant_id` del body como fuente de confianza.
+2. **FKs compuestas** `(tenant_id, x_id) → x(tenant_id, id)` en todo el dominio,
+   más variantes que atan contexto: `enrollments → sections(tenant_id,
+   academic_period_id, grade_level_id, id)`; `assessments → enrollments(tenant_id,
+   id, academic_period_id)` y `grading_terms(tenant_id, academic_period_id, id)`;
+   `payment_allocations → payments/charges(tenant_id, id, student_id)`.
+3. **`setup_tenant_table(tabla, lectura, escritura)`** (0013) aplica RLS por
+   tenant + rol, revoke a anon, lectura del super-admin, trigger de tenant,
+   bloqueo por suspensión y updated_at.
+4. **Historial:** todo lo del aula cuelga de `enrollments` y fotografía
+   `section_id` (`classroom_row_guard`). Año `closed` ⇒ inmutable. Boletín =
+   `snapshot` jsonb congelado al generarse.
+5. **Dinero:** pagos inmutables; movimientos solo por RPC con
+   `pg_advisory_xact_lock('arreschool_account:'||student)`; recibos por colegio
+   (`tenant_counters`).
+
+### 14.2 Roles y predicados (0012/0013)
+
+```
+member_role = owner | admin | secretary | teacher | accountant
+auth_role() → member_role            auth_has_role(member_role[]) → bool
+auth_can_manage_academics()  owner, admin
+auth_can_manage_students()   owner, admin, secretary
+auth_can_handle_finance()    owner, admin, accountant, secretary
+auth_can_manage_finance()    owner, admin, accountant
+auth_teaches_section(uuid)   manage_students OR docente activa asignada (section_teachers + teachers.user_id)
+```
+Espejo en `src/lib/permissions.ts` (`manageAcademics`, `manageStudents`,
+`handleFinance`, `manageFinance`, `manageTeam`).
+
+### 14.3 Tablas (lectura / escritura)
+
+| Tabla | Mig. | Lee | Escribe |
+|---|---|---|---|
+| tenants (+legal_id, principal_name, receipt_footer) | 0013 | — | — |
+| tenant_counters (sin políticas) | 0013 | — | solo definer |
+| academic_periods (1 activo por colegio) | 0013 | todos | academics |
+| grading_terms | 0013 | todos | academics |
+| grade_levels (sort_order = promoción) | 0013 | todos | academics |
+| teachers (user_id → cuenta del colegio) | 0013 | todos | academics |
+| sections | 0013 | todos | academics |
+| section_teachers | 0013 | todos | academics |
+| students (code automático EST-000001) | 0014 | todos | students |
+| guardians | 0014 | todos | students |
+| student_guardians (1 principal) | 0014 | todos | students |
+| student_documents (ruta en bucket `files`) | 0014 | todos | students |
+| enrollments (1 por estudiante y año) | 0014 | todos | students |
+| attendance_records (1 por inscripción y día) | 0015 | todos | teaches_section |
+| competencies, indicators | 0015 | todos | academics |
+| assessments (level L/EP/I y/o score) | 0015 | todos | teaches_section |
+| student_observations | 0015 | todos | teaches_section; editar/borrar autor o academics |
+| report_cards | 0015 | todos | solo RPC; cliente: `general_comment` en borrador |
+| fee_concepts | 0016 | handle_finance | manage_finance |
+| charges | 0016 | handle_finance | handle_finance, por columnas |
+| payments, payment_allocations | 0016 | handle_finance | solo RPC |
+| announcements | 0017 | todos | students, o docente a sus secciones |
+| vista student_accounts (security_invoker) | 0016 | handle_finance | — |
+
+### 14.4 RPC del dominio
+
+```
+save_attendance(p_section, p_date, p_marks jsonb) → int            INVOKER, idempotente (cola offline)
+save_assessments(p_enrollment, p_term, p_marks jsonb) → int        INVOKER, idempotente
+generate_report_cards(p_section, p_term) → {generated, skipped}
+publish_report_cards(p_section, p_term, p_publish bool) → int      academics
+register_payment(p_student, p_amount, p_method, p_paid_on, p_reference, p_guardian,
+                 p_payer_name, p_notes, p_allocations jsonb) → {payment_id, receipt_number, allocated, credit}
+void_payment(p_payment, p_reason) / void_charge(p_charge, p_reason)        manage_finance
+apply_student_credit(p_student) → numeric
+generate_charges(p_concept, p_amount, p_description, p_due_date, p_billing_month,
+                 p_period, p_grade, p_section) → {created, skipped}       manage_finance
+activate_academic_period(p_period) / close_academic_period(p_period) → {promoted, completed}
+promote_students(p_from_period, p_to_period) → {created, skipped}
+dashboard_summary() → DashboardSummary (finance = null sin handle_finance)
+report_attendance(p_from, p_to, p_section) / report_income(p_from, p_to) / report_enrollment(p_period)   INVOKER
+list_team_members() / set_member_role(p_user, p_role) / remove_member(p_user)   (0018)
+create_invite(p_role, p_email)  — rechaza 'owner' (0018)
+```
+Plan: `plan_settings.max_students` (antes max_items) cuenta estudiantes
+ACTIVOS (`PLAN_LIMIT_STUDENTS`); `admin_update_plan(..., p_max_students, ...)`.
+
+### 14.5 Frontend
+
+Rutas: `/estudiantes`, `/estudiantes/:id`, `/familias`, `/inscripciones`
+(manageStudents), `/academico`, `/asistencia`, `/evaluaciones`,
+`/evaluaciones/boletin/:id`, `/finanzas` y `/finanzas/recibo/:id`
+(handleFinance), `/comunicados`, `/reportes`.
+
+Hooks: `academic.ts`, `students.ts`, `enrollments.ts`, `attendance.ts`,
+`evaluations.ts`, `finance.ts`, `announcements.ts`, `reports.ts`,
+`dashboard.ts`, `team.ts`.
+
+Claves de cache (prefijo = familia que se invalida junta):
+```
+['periods'] ['grading-terms', periodId] ['grade-levels'] ['teachers'] ['sections', periodId]
+['students'] ['student', id] ['guardians'] ['student-guardians', studentId]
+['student-documents', studentId] ['signed-url', path]
+['enrollments', periodId] ['enrollments','section', sectionId] ['student-enrollments', studentId]
+['attendance', sectionId, date] ['attendance','enrollment', enrollmentId]
+['competencies'] ['assessments', sectionId, termId] ['observations', enrollmentId]
+['report-cards', sectionId, termId] ['report-cards','student', studentId] ['report-card', id]
+['fee-concepts'] ['charges', filters] ['charges','student', id] ['payments', from, to]
+['payments','student', id] ['payment', id] ['student-accounts'] ['student-accounts', id]
+['announcements'] ['report', …] ['team','members-email'] ['dashboard']
+```
+
+Cola offline: la mutación que funciona sin red es **pasar lista**
+(`OFFLINE_SAVE_ATTENDANCE_KEY = ['saveAttendance']`, `scope: {id:'attendance'}`
+para que se ejecuten en orden). El guard de sesión sigue DENTRO del
+`mutationFn` (§7.3).
+
+### 14.6 Pruebas
+
+`npm run test:db` aplica 0001–0018 en PGlite con un stub de Supabase
+(`supabase/tests/supabase-stub.sql`) y ejecuta
+`supabase/tests/isolation.test.mjs`: aislamiento entre dos colegios, roles,
+finanzas, boletines, cierre de año, topes de plan y purga.

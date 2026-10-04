@@ -1,130 +1,121 @@
-# ArreSchool — starter SaaS multi-tenant
+# ArreSchool — gestión de colegios, multi-tenant
 
-Esqueleto de producción para una aplicación **multi-tenant** (varios negocios
-aislados en la misma base de datos) con React + Supabase.
+**ArreSchool** es una plataforma SaaS para administrar colegios. Empieza por la
+educación **inicial / preescolar**, y el modelo ya está preparado para primaria y
+secundaria (nivel educativo por grado, nota numérica junto a la escala
+cualitativa, varios docentes por sección).
 
-- **Frontend:** React 18 + TypeScript `strict` + Vite 6 + Tailwind + PWA
-- **Backend:** Supabase — Postgres con **RLS**, Auth, Storage y Edge Functions
-- **Incluye:** registro y acceso (correo o Google), alta del negocio, equipo con
-  invitaciones, planes con topes aplicados **en la base**, panel de super-admin,
-  páginas legales, cache offline y cola de escritura para una entidad.
+Cada colegio es un **tenant**: Colegio A, Colegio B y Colegio C comparten la base
+de datos, pero los estudiantes, docentes, pagos y notas de uno **nunca** aparecen
+en otro. Eso no lo garantiza la interfaz: lo garantiza Postgres (RLS por fila,
+claves foráneas compuestas por `tenant_id` y triggers), y lo comprueba un test
+automático (`npm run test:db`).
 
-### Qué NO es
+```
+            ARRESCHOOL
 
-**No es un producto.** No tiene tu dominio de negocio: trae una entidad de
-ejemplo llamada `items` que existe solo para enseñar el patrón completo
-(tabla → RLS → tope de plan → tipo → hook → pantalla). El trabajo de quien usa
-esto es sustituirla por lo suyo.
+      ┌── Estudiantes ──┐
+      │                 │
+Académico             Familias
+      │                 │
+      └──── Finanzas ────┘
+```
 
-Tampoco es una plantilla que se personaliza por configuración: es **código que
-vas a editar**. Está comentado explicando el *porqué* de cada decisión rara
-justo donde te la vas a encontrar.
+| Área | Qué incluye |
+|---|---|
+| **Estudiantes** | Ficha con datos médicos y foto, matrícula automática, documentos (acta, vacunas…), historial por año, inscripciones |
+| **Académico** | Años escolares, cortes de evaluación, grados, secciones, docentes, asistencia diaria (funciona sin conexión), competencias e indicadores, evaluaciones L/EP/I, anecdotario y boletines |
+| **Finanzas** | Conceptos, cargos (también masivos por mes), pagos con reparto automático, recibos numerados por colegio, anulaciones con motivo, saldo a favor y cuentas por cobrar |
+| **Familias** | Padres y tutores compartidos entre hermanos: quién recoge, contacto de emergencia, responsable de pagos |
+| **Alrededor** | Comunicados por colegio/grado/sección, reportes, panel, equipo con roles |
+
+Nombres de producto: **ArreSchool Admin** (Dirección y Secretaría), **ArreSchool
+Teacher** (docentes: asistencia y evaluaciones de sus secciones), **ArreSchool
+Pay** (finanzas), **ArreSchool Reports** y, próximamente, **ArreSchool Family**
+(portal de familias; el modelo ya reserva `guardians.user_id`).
+
+### Flujo de un colegio
+
+```
+Crear colegio → año académico → grados → secciones → docentes
+→ estudiantes → padres/tutores → inscribir → asignar sección
+→ asistencia → evaluar → boletines → cargos → pagos → recibos
+```
+
+El panel muestra «Primeros pasos» con este orden mientras falte algo: un colegio
+pequeño puede empezar sin ayuda técnica.
+
+### Roles
+
+| Rol | Puede |
+|---|---|
+| Dirección (`owner`) | Todo, incluido el plan y el equipo |
+| Administración (`admin`) | Todo lo operativo |
+| Secretaría (`secretary`) | Estudiantes, familias, inscripciones, asistencia, comunicados y caja (cobrar) |
+| Docente (`teacher`) | Lee lo académico; escribe asistencia, evaluaciones y observaciones **solo de sus secciones**. No ve finanzas |
+| Finanzas (`accountant`) | Conceptos, cargos, pagos y anulaciones |
+
+La matriz vive en la base (`auth_can_*()`, migración 0013) y se replica en
+`src/lib/permissions.ts` solo para no enseñar botones que fallarían.
 
 ---
 
-## 1. Arranque en 10 minutos
+## 1. Arranque
 
 Necesitas Node 20+, una cuenta en [Supabase](https://supabase.com) y el
 [CLI](https://supabase.com/docs/guides/cli) (`brew install supabase/tap/supabase`).
 
 ```bash
-# 1. Proyecto Supabase: créalo en supabase.com y copia el Project Ref,
-#    la Project URL y la anon key (Settings → API).
-
 npm install
+npm run test:db                  # aplica las migraciones en un Postgres en memoria
+                                 # y prueba el aislamiento entre colegios
 
-cp .env.example .env
-#    Rellena VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY. Nada más hace falta
-#    para desarrollo.
+cp .env.example .env             # VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY
 
+supabase login
 supabase link --project-ref TU_PROJECT_REF
-supabase db push                 # aplica supabase/migrations/0001…0011
+supabase db push                 # aplica supabase/migrations/0001…0018
 supabase functions deploy welcome
 
 npm run icons                    # íconos PWA + favicon desde public/logo.png
-
 npm run dev
 ```
 
-> **El logo es la fuente única de los íconos.** `public/logo.png` viene con un
-> marcador de posición: sustitúyelo por el tuyo (PNG **cuadrado**, 512 px o más)
-> y vuelve a correr `npm run icons`. De ahí salen `favicon.ico`, los íconos del
-> manifiesto, el *maskable* de Android y la imagen social `og.png`; `public/icons/`
-> no se versiona a propósito, lo regenera el build del CI. Si te saltas el paso,
-> la PWA se instala con el logo del starter.
+Regístrate en `/registro` y crea tu colegio: `setup_tenant()` arma el colegio, tu
+perfil de Dirección (`owner`) y una suscripción `basic` en prueba de 30 días. **No
+hay datos de demostración** (`supabase/seed.sql` explica por qué).
 
-Abre el enlace de Vite, regístrate en `/registro` y crea tu negocio: la pantalla
-de bienvenida llama a `setup_tenant()`, que arma el negocio, tu perfil de `owner`
-y una suscripción `basic` en prueba de 30 días. **No hay datos de demostración**
-(`supabase/seed.sql` explica por qué está vacío a propósito).
-
-Dos ajustes más, cuando toque:
-
-- **URLs de retorno.** `supabase/config.toml` ya declara las de `localhost`.
-  Cuando despliegues, añade ahí el origen real y aplica con
-  `SMTP_PASSWORD="re_..." supabase config push`. Sin esto, el enlace de
-  recuperación de contraseña te manda al `site_url` en vez de a donde estabas.
-- **Correo propio.** Sin SMTP configurado, Supabase usa su remitente compartido,
-  limitado a unos pocos correos por hora. Las plantillas con marca están en
-  `supabase/templates/`.
-
-> ¿Local con Docker? `supabase start` aplica migraciones y levanta todo; los
-> correos se leen en `http://localhost:54324`.
+- **URLs de retorno.** `supabase/config.toml` ya declara las de `localhost`. Al
+  desplegar, añade el origen real y aplica con `SMTP_PASSWORD="re_..." supabase config push`.
+- **Correo propio.** Sin SMTP, Supabase usa su remitente compartido, limitado a
+  unos pocos correos por hora. Las plantillas están en `supabase/templates/`.
 
 ---
 
-## 2. Haz que sea tuyo
+## 2. Origen y decisiones de arquitectura
 
-### 2.1 El nombre
+ArreSchool nace de `saas-starter` (React + Supabase con RLS, planes, super-admin y
+PWA offline). Se conservó todo su andamiaje de plataforma y se sustituyó la
+entidad de ejemplo `items` por el dominio escolar, **con migraciones nuevas**
+(0012–0018) en lugar de reescribir las del starter.
 
-```bash
-node scripts/rename.mjs "Mi Producto" miproducto          # simulacro
-node scripts/rename.mjs "Mi Producto" miproducto --yes    # escribe
-```
-
-Sustituye `ArreSchool` (nombre visible) y `arreschool` (slug de máquina: clave de
-`localStorage`, `project_id` de Supabase, GUC de Postgres) en todo el repo. Sin
-`--yes` solo imprime qué cambiaría — míralo antes, reescribe medio árbol de una
-pasada.
-
-Después, a mano: tu `public/logo.png` + `npm run icons`, el dominio de ejemplo en
-`index.html`, `supabase/config.toml` y `src/lib/constants.ts`, y la paleta en
-`tailwind.config.js`.
-
-### 2.2 La entidad de ejemplo: `items` → lo tuyo
-
-`items` es un molde, no una tabla que quieras conservar. Renombrarla toca estos
-archivos y nada más:
-
-| Archivo | Qué hay que cambiar |
-|---|---|
-| `supabase/migrations/0012_<tu_entidad>.sql` | **migración NUEVA** (ver abajo) |
-| `src/types/db.ts` | `Item`, `ItemStatus` |
-| `src/hooks/items.ts` | el módulo entero → `src/hooks/<tu_entidad>.ts` |
-| `src/lib/offline.ts` | `OFFLINE_CREATE_ITEM_KEY`, `CreateItemInput`, la clave `['items']` |
-| `src/lib/constants.ts` | `ITEM_STATUS_LABEL`, las viñetas de `PLANS` |
-| `src/features/items/*` | `ItemsPage`, `ItemFormModal` |
-| `src/App.tsx` | el `lazyWithRetry` y la ruta `/items` |
-| `src/components/Layout.tsx` | la entrada del menú |
-| `src/hooks/dashboard.ts`, `features/dashboard/` | los campos de `dashboard_summary()` |
-| `src/features/admin/PlansCard.tsx` | el campo `max_items` del formulario de planes |
-
-La parte de base de datos va en una **migración nueva**, nunca editando la 0001
-(§ CLAUDE.md → migraciones). Lo mínimo:
-
-```sql
--- 0012_widgets.sql
-alter table public.items rename to widgets;
-alter type item_status rename to widget_status;
-alter table public.plan_settings rename column max_items to max_widgets;
--- Los triggers y las funciones que las nombran hay que reescribirlos:
--- enforce_item_consistency, enforce_item_limit, dashboard_summary,
--- admin_update_plan, admin_tenant_purge_preview, admin_delete_tenant.
-```
-
-Si aún no has desplegado nada, es más limpio **editar 0001–0011 directamente** y
-hacer `supabase db reset`. La regla de "no tocar migraciones aplicadas" empieza a
-valer el día que la base tiene datos que te importan.
+- **Sin servidor intermedio.** No hay API propia (ni Hono ni Express): el
+  navegador habla con PostgREST con el JWT del usuario, y toda regla que importa
+  vive en Postgres. El "tenant del contexto" es `auth_tenant_id()`, que sale del
+  token (`auth.uid()` → `profiles.tenant_id`).
+- **El cliente nunca manda el tenant.** Cada tabla tiene `tenant_id default
+  auth_tenant_id()` y el trigger `enforce_tenant_row()` rechaza cualquier otro
+  valor en INSERT y UPDATE.
+- **Claves foráneas compuestas.** Las tablas exponen `unique (tenant_id, id)` y
+  sus hijas las referencian con `(tenant_id, x_id)`: es imposible inscribir al
+  estudiante de otro colegio o aplicar un pago a un cargo ajeno, aunque una RPC
+  o una Edge Function se equivocaran.
+- **Historial fiable.** La asistencia, las notas y los boletines cuelgan de la
+  inscripción (estudiante + año) y guardan la sección de ese momento. Un año
+  cerrado es inmutable; el boletín publicado es una foto congelada (`snapshot`).
+- **Dinero inmutable.** Los pagos no se editan ni se borran: se anulan con
+  motivo. El cobro, el reparto entre cargos y el número de recibo se hacen en una
+  sola RPC transaccional con bloqueo por cuenta de estudiante.
 
 ---
 
@@ -181,122 +172,51 @@ Cuatro decisiones lo explican casi todo:
 
 ---
 
-## 4. Añadir una entidad nueva
+## 4. Añadir una tabla al dominio
 
-Es el 90% del trabajo que harás. Cinco pasos, en este orden.
+Cinco pasos, en este orden. El molde vivo es cualquier tabla de 0013–0017.
 
-### 4.1 Migración
+1. **Migración nueva** (`0019_…sql`), con `tenant_id uuid not null default
+   public.auth_tenant_id() references public.tenants(id) on delete cascade`,
+   `constraint …_tenant_id_key unique (tenant_id, id)` y FKs compuestas
+   `(tenant_id, x_id)` hacia sus padres. Luego, en una línea:
 
-`supabase/migrations/0012_widgets.sql` — el patrón completo está en `items`
-(0001 + 0002 + 0003 + 0005 + 0009), cópialo:
+   ```sql
+   select public.setup_tenant_table('mi_tabla', 'true', 'public.auth_can_manage_students()');
+   ```
 
-```sql
-create table if not exists public.widgets (
-  id uuid primary key default gen_random_uuid(),
-  tenant_id uuid not null references public.tenants(id) on delete cascade,
-  name text not null,
-  created_by uuid references auth.users(id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-create index if not exists widgets_tenant_idx on public.widgets(tenant_id);
-
-create trigger widgets_set_updated_at
-  before update on public.widgets
-  for each row execute function public.set_updated_at();
-```
-
-### 4.2 RLS — no es opcional
-
-```sql
-alter table public.widgets enable row level security;
-
--- Supabase concede INSERT/UPDATE/DELETE a anon y authenticated POR DEFECTO.
--- Sin este revoke y sin la política, un PATCH ajeno devuelve 204 (0 filas
--- afectadas) en vez de 42501: parece que funciona y no hace nada.
-revoke all on public.widgets from anon;
-
-drop policy if exists widgets_tenant on public.widgets;
-create policy widgets_tenant on public.widgets
-  for all to authenticated
-  using (tenant_id = public.auth_tenant_id())
-  with check (tenant_id = public.auth_tenant_id());
-
--- El super-admin lee todos los negocios: PERMISIVA y SOLO SELECT.
-drop policy if exists widgets_platform_read on public.widgets;
-create policy widgets_platform_read on public.widgets
-  for select to authenticated
-  using (public.auth_is_platform_admin() and public.auth_tenant_id() is null);
-```
-
-Si la entidad debe contarse contra el plan o bloquearse en un negocio suspendido,
-añade también los triggers `enforce_*_consistency`, `enforce_*_limit` y
-`block_write_if_tenant_suspended` (calcados de `items`), y **acuérdate de
-`admin_delete_tenant`**: la purga borra hijo→padre y una tabla nueva que no esté
-en esa lista rompe el borrado por *foreign key*.
-
-### 4.3 Tipo
-
-En `src/types/db.ts`, snake_case igual que la columna:
-
-```ts
-export interface Widget {
-  id: string
-  tenant_id: string
-  name: string
-  created_by: string | null
-  created_at: string
-  updated_at: string
-}
-```
-
-### 4.4 Hook
-
-`src/hooks/widgets.ts`. Copia `src/hooks/items.ts`: una query por clave de cache,
-`if (error) throw error` en cada llamada, e invalidar en `onSuccess` **todo lo que
-la mutación deja desfasado** (casi siempre también `['dashboard']`).
-
-```ts
-export function useWidgets() {
-  return useQuery({
-    queryKey: ['widgets'],
-    queryFn: async (): Promise<Widget[]> => {
-      const { data, error } = await supabase.from('widgets').select('*')
-      if (error) throw error
-      return (data ?? []) as Widget[]
-    },
-  })
-}
-```
-
-`tenant_id` no se pasa en el `select`: lo filtra la RLS. En el `insert` sí, y el
-trigger de consistencia comprueba que sea el tuyo.
-
-### 4.5 Pantalla
-
-`src/features/widgets/WidgetsPage.tsx`, con las primitivas de
-`src/components/ui/`. Luego: `lazyWithRetry` + `<Route path="widgets">` en
-`src/App.tsx` y la entrada en el menú de `src/components/Layout.tsx`.
-
-**Regla móvil:** tabla en `lg:` y `DataList`/`DataRow` + `ActionMenu` abajo.
-Ningún listado puede exigir scroll horizontal en el teléfono; revísalo a 360 px.
+   Eso deja RLS por tenant con el predicado de rol de lectura y de escritura,
+   `revoke` a `anon`, lectura del super-admin, `enforce_tenant_row`, bloqueo por
+   suspensión y `updated_at`.
+2. **Purga:** añade la tabla, en orden hijo→padre, a `admin_delete_tenant`
+   (versión vigente en 0018). Con FKs `restrict`, una tabla fuera de sitio deja
+   el colegio inborrable.
+3. **Test:** amplía `supabase/tests/isolation.test.mjs` y pasa `npm run test:db`.
+4. **Tipo** en `src/types/db.ts` (snake_case, igual que la columna) y **hook** en
+   `src/hooks/<área>.ts`: `if (error) throw error` en cada llamada, sin
+   `tenant_id` en filtros ni escrituras, e invalidar todo lo que la mutación deja
+   desfasado (casi siempre también `['dashboard']`).
+5. **Pantalla** en `src/features/<área>/` con las primitivas de
+   `src/components/ui/`, ruta en `src/App.tsx` y entrada en `NAV` de
+   `src/components/Layout.tsx` (con `permission` si no es para todo el colegio).
+   Regla móvil: tabla en `lg:` y `DataList`/`ActionMenu` abajo, revisado a 360 px.
 
 ---
 
 ## 5. El primer super-admin
 
-El panel `/admin` (ver todos los negocios, cambiar planes, suspender, borrar) lo
-abre quien esté en `platform_admins`. Esa tabla **no se puede escribir desde el
+El panel `/admin` (ver todos los colegios, cambiar planes, suspender, borrar) lo
+abre quien esté en `platform_admins` (el equipo de ArreSchool, no los colegios). Esa tabla **no se puede escribir desde el
 cliente** —RLS sin políticas de escritura— y la RPC que da de alta a los demás
 exige ya ser super-admin. Al primero hay que darlo de alta desde fuera:
 
 1. Crea la cuenta en **Auth → Users → Add user** (marca *Auto Confirm User*) o
-   regístrate por la app **sin crear negocio**.
+   regístrate por la app **sin crear colegio**.
 2. Abre `scripts/grant-platform-admin.sql`, cambia el correo y ejecútalo en el
    **SQL Editor** de Supabase. Es idempotente y trae dos consultas de
    verificación.
 
-> Un super-admin **no puede tener negocio**. Las políticas de lectura
+> Un super-admin **no puede tener colegio**. Las políticas de lectura
 > cross-tenant exigen `auth_is_platform_admin() and auth_tenant_id() is null`: con
 > `tenant_id`, el panel se queda ciego. Usa una cuenta aparte de la que uses como
 > cliente.
@@ -312,7 +232,7 @@ El repo trae los dos destinos listos.
 | Archivo | `.github/workflows/deploy.yml` | `vercel.json` |
 | `VITE_BASE` | `/mi-repo/` en *project page*; `/` en dominio propio o *user page* | `/` |
 | `VITE_ROUTER` | vacío → **HashRouter** | `browser` → URLs limpias |
-| URL | `…/#/items` | `…/items` |
+| URL | `…/#/estudiantes` | `…/estudiantes` |
 
 **`VITE_BASE`, `VITE_ROUTER` y el dominio se cortan juntos.** Los dos errores que
 dejan la app en blanco o en 404:
@@ -320,7 +240,7 @@ dejan la app en blanco o en 404:
 - `VITE_BASE=/mi-repo/` con un dominio propio: los `<script>` apuntan a
   `/mi-repo/assets/…`, que ahí no existe. Pantalla en blanco, sin error visible.
 - `VITE_ROUTER=browser` en GitHub Pages: la portada carga, pero recargar en
-  `/items` devuelve el 404 de Pages. Pages no sabe reescribir a `index.html`;
+  `/estudiantes` devuelve el 404 de Pages. Pages no sabe reescribir a `index.html`;
   por eso el HashRouter es el valor por defecto.
 
 En Pages: **Settings → Pages → Source: GitHub Actions**, y los `VITE_*` como
@@ -381,12 +301,12 @@ Están en `ARQUITECTURA.md` §12 con detalle. El resumen y el porqué:
    `maximum-scale=1`: rompe la accesibilidad.
 4. **`base` y dominio se cortan juntos** — ver §6.
 5. **`statement_timeout`**: PostgREST lo hoistea y `authenticated` trae 8 s. Una
-   RPC pesada (la purga de un negocio) fija su propio `set local statement_timeout`
+   RPC pesada (la purga de un colegio) fija su propio `set local statement_timeout`
    dentro de la función, o muere a mitad.
 6. **Storage no se borra por SQL.** Borrar la fila deja el blob huérfano
    ocupando espacio para siempre. `admin_delete_tenant` devuelve las rutas y el
    cliente las vacía con la API (`removeTenantFiles`).
-7. **Los triggers que reaccionan al DELETE rompen una purga**: un negocio
+7. **Los triggers que reaccionan al DELETE rompen una purga**: un colegio
    suspendido no se podría borrar. De ahí la marca de transacción
    `arreschool.purging_tenant`.
 8. **Tabla nueva ⇒ `revoke` explícito** — ver §4.2.
@@ -406,10 +326,11 @@ Están en `ARQUITECTURA.md` §12 con detalle. El resumen y el porqué:
 | Falta | Dónde encajaría |
 |---|---|
 | **Pasarela de pago** | Edge Function + tabla de órdenes. El precio lo fija el servidor, acreditar tiene que ser idempotente y el webhook verificar la firma contra el cuerpo crudo. `plan_requests` es el hueco: hoy el super-admin aprueba a mano |
-| **Tests** | Vitest + Testing Library para hooks y utilidades; para RLS, `supabase test db` (pgTAP) — es donde más rentan, porque una política mal escrita no da error, da resultados de menos… o de más |
+| **Tests de interfaz** | Vitest + Testing Library para hooks y pantallas. La base sí tiene test (`npm run test:db`: aislamiento, roles, finanzas, cierre de año y purga) |
+| **ArreSchool Family** | Portal de familias: `guardians.user_id` ya existe; faltan el rol y las políticas de lectura por hijo |
 | **i18n** | Todos los textos están en el JSX en español. Extraerlos a `react-intl`/`i18next` es mecánico pero toca cada pantalla |
 | **Realtime** | `supabase.channel()` en la capa de hooks, invalidando la clave de cache correspondiente. Nunca en un componente |
-| **Búsqueda y paginación de servidor** | Hoy se pagina en el cliente porque el plan acota la lista y es lo único que funciona sin conexión. Con volumen, `range()` + índices |
+| **Búsqueda y paginación de servidor** | Estudiantes y familias se paginan en el cliente (caben en memoria y funciona sin conexión); cargos y pagos ya filtran en el servidor. Con colegios grandes, `range()` + índices |
 | **Borrado de la propia cuenta por el usuario** | Existe `admin_delete_tenant` para el super-admin; falta el equivalente auto-servicio |
 
 ---
@@ -422,7 +343,8 @@ Están en `ARQUITECTURA.md` §12 con detalle. El resumen y el porqué:
 | `npm run build` | `tsc -b` + build a `dist/` |
 | `npm run lint` | Solo tipos (`tsc -b --noEmit`) |
 | `npm run icons` | Íconos PWA y favicon desde `public/logo.png` |
-| `npm run rename` | Renombra `ArreSchool`/`arreschool` (ver §2.1) |
+| `npm run test:db` | Migraciones en Postgres en memoria (PGlite) + test de aislamiento entre colegios, roles y finanzas |
+| `npm run db:check` | Solo comprueba que todas las migraciones aplican |
 | `npm run preview` | Sirve el `dist/` ya construido |
 | `npm run db:push` | `supabase db push` — migraciones al proyecto enlazado |
 | `npm run db:start` | `supabase start` — Supabase local con Docker |

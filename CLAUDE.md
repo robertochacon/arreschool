@@ -8,12 +8,13 @@ los detalles (nombres de tablas, firmas de RPC, claves de cache) están en
 
 1. Lee `ARQUITECTURA.md` antes de crear cualquier archivo nuevo.
 2. Antes de inventar un patrón, **abre el archivo hermano más cercano y cópialo**.
-   `src/hooks/items.ts` y `supabase/migrations/0009_plan_settings.sql` son los dos
-   moldes de referencia.
-3. Este es un starter genérico: la entidad de ejemplo se llama `items`/`Item`. No
-   metas dominio de negocio real. El nombre visible es `ArreSchool` y el slug de
-   máquina es `arreschool`; los sustituye `scripts/rename.mjs`, así que **no los
-   escribas a mano donde no toque** ni los rompas partiéndolos en dos líneas.
+   Moldes: `src/hooks/students.ts` (hooks), `src/features/students/` (listado +
+   formulario + ficha) y `supabase/migrations/0014_students_families.sql` (tabla
+   del dominio).
+3. El producto es **ArreSchool**: SaaS multi-tenant para colegios, donde cada
+   tenant es un colegio. Nunca escribas el nombre anterior del proyecto (Nunurd)
+   ni hables de "negocio" en la interfaz: es "colegio". El slug de máquina es
+   `arreschool` (claves de storage, GUC `arreschool.purging_tenant`).
 4. Comentarios y textos de interfaz **en español**. Identificadores en inglés.
 5. Comenta el **porqué**, no el qué. Un comentario que repite el código sobra;
    uno que explica una decisión rara ahorra un bug futuro.
@@ -62,7 +63,7 @@ seguridad.
 **Migraciones**
 
 - Se numeran `NNNN_titulo.sql`, cuatro dígitos, correlativo. La siguiente libre es
-  la que toque después de `0011_delete_tenant.sql`. Un solo hueco por número.
+  la que toque después de `0018_platform_school.sql`. Un solo hueco por número.
 - Cabecera `-- ═══ ArreSchool · NNNN · <título> ═══` y una explicación de **por qué**
   existe la migración.
 - Idempotente donde se pueda: `create table if not exists`, `drop policy if exists`,
@@ -74,20 +75,44 @@ seguridad.
   nueva. (Antes del primer despliegue, con la base aún vacía, sí vale editar y
   hacer `supabase db reset`.)
 
-**Tabla nueva ⇒ siempre las cuatro cosas**
+**Tabla nueva del dominio ⇒ siempre así**
 
-1. `tenant_id uuid not null references public.tenants(id) on delete cascade` + índice.
-2. `alter table … enable row level security`.
-3. `revoke all on … from anon;` — Supabase concede INSERT/UPDATE/DELETE a `anon` y
-   `authenticated` por defecto. Sin revoke ni política, un PATCH ajeno devuelve
-   **204 con 0 filas** en vez de 42501: parece que funciona y no hace nada.
-4. Política `for all to authenticated using/with check (tenant_id = auth_tenant_id())`,
-   y si el super-admin debe verla, otra **permisiva y solo SELECT** con
-   `auth_is_platform_admin() and auth_tenant_id() is null`.
+1. `tenant_id uuid not null default public.auth_tenant_id() references
+   public.tenants(id) on delete cascade` + índice que empiece por `tenant_id`.
+   El cliente **nunca** manda `tenant_id`: lo pone el default y
+   `enforce_tenant_row()` rechaza cualquier otro.
+2. `constraint <tabla>_tenant_id_key unique (tenant_id, id)` y las FKs hacia
+   otras tablas del dominio **compuestas**: `foreign key (tenant_id, x_id)
+   references public.x (tenant_id, id)`. Es lo que impide por construcción
+   referenciar filas de otro colegio. `on delete restrict` para todo lo que sea
+   historia (inscripciones, pagos, notas).
+3. `select public.setup_tenant_table('<tabla>', '<predicado lectura>',
+   '<predicado escritura>');` — RLS, `revoke` a `anon`, 4 políticas por tenant con
+   el rol (`auth_can_manage_academics()`, `auth_can_manage_students()`,
+   `auth_can_handle_finance()`, `auth_can_manage_finance()`,
+   `auth_teaches_section(section_id)`), lectura del super-admin, trigger de
+   tenant, bloqueo por suspensión y `updated_at`.
+4. Columnas que reflejan dinero o estado calculado: **privilegios por columna**
+   (`revoke update … ; grant update (col1, col2) …`), como `charges` en 0016.
 
-Además: añádela a `admin_delete_tenant` (borra hijo→padre; una tabla que falte
-rompe la purga por *foreign key*) y decide si necesita
-`block_write_if_tenant_suspended`.
+Además: añádela a `admin_delete_tenant` (versión vigente en 0018; borra
+hijo→padre y una tabla que falte rompe la purga) y amplía
+`supabase/tests/isolation.test.mjs`. **`npm run test:db` tiene que pasar** antes
+de dar una migración por buena.
+
+**Roles.** `owner`, `admin`, `secretary`, `teacher`, `accountant` (0012). La
+matriz está en los `auth_can_*()` de 0013 y su espejo en
+`src/lib/permissions.ts`: si cambias uno, cambia el otro en el mismo commit. La
+UI oculta lo que el rol no puede hacer (`usePermissions().can(...)`), pero la
+seguridad es la de la base.
+
+**Dinero.** Pagos inmutables (solo `void_payment` con motivo), cobro y reparto
+solo por `register_payment`. Nunca un UPDATE de `amount_paid`/`status` desde el
+cliente.
+
+**Historial.** Asistencia, evaluaciones, observaciones y boletines cuelgan de
+`enrollments` y guardan `section_id` del momento (lo pone
+`classroom_row_guard`). Un año `closed` es inmutable (`PERIODO_CERRADO`).
 
 **RPC nueva:** `security definer set search_path = public`, guardia de
 autorización en la primera línea, `revoke all … from public` + `grant execute …
@@ -99,11 +124,14 @@ hoistea el suyo y `authenticated` trae 8 s.
 Los triggers que aplican un tope lanzan el mensaje con un prefijo técnico:
 
 ```sql
-raise exception 'PLAN_LIMIT_ITEMS: Tu plan permite máximo % items. Actualiza tu plan para crear más.', v_max;
+raise exception 'PLAN_LIMIT_STUDENTS: El plan % permite % estudiantes activos. Actualiza tu plan para inscribir más.', v_name, v_max;
 ```
 
-- Prefijos en uso: `PLAN_LIMIT_ITEMS`, `PLAN_LIMIT_MEMBERS`. Uno nuevo sigue el
-  patrón `PLAN_LIMIT_<RECURSO>`.
+- Prefijos en uso: `PLAN_LIMIT_STUDENTS`, `PLAN_LIMIT_MEMBERS`. Uno nuevo sigue el
+  patrón `PLAN_LIMIT_<RECURSO>`. Marcas de negocio con el mismo protocolo:
+  `PERIODO_CERRADO`, `PERIODO_ACTIVO`, `SECCION_LLENA`, `SIN_SECCION`,
+  `CORTE_CERRADO`, `BOLETIN_PUBLICADO`, `CARGO_ANULADO`, `CARGO_CON_PAGOS`,
+  `MONTO_INVALIDO`, `SIN_PERIODO_ACTIVO`, `CUENTA_SUSPENDIDA`.
 - El prefijo existe **para que el código lo reconozca**, no para enseñárselo a
   nadie: `errorMessage()` (`src/lib/errors.ts`) recorta hasta los primeros dos
   puntos y pinta solo el texto amigable.
@@ -118,6 +146,7 @@ raise exception 'PLAN_LIMIT_ITEMS: Tu plan permite máximo % items. Actualiza tu
 npm run dev                             # desarrollo
 npm run lint                            # tsc -b --noEmit  ← pásalo antes de terminar
 npm run build                           # tipos + build a dist/
+npm run test:db                         # migraciones + aislamiento entre colegios (PGlite)
 
 supabase db push --linked               # aplica migraciones al proyecto enlazado
 supabase db reset                       # recrea la base LOCAL desde cero (borra datos)
@@ -136,5 +165,7 @@ supabase config push                    # SIEMPRE con SMTP_PASSWORD en el entorn
   pantalla se queda en blanco antes de React.
 - No pongas un secreto detrás de `VITE_`: acaba en `dist/`, que se publica tal
   cual. Los secretos van en `supabase secrets set`.
+- Cuidado con los heredocs sin comillas en la shell: un comentario con
+  `` `supabase db push` `` entre backticks se EJECUTA. Usa `<<'EOF'`.
 - No añadas dependencias sin necesidad. El stack de `ARQUITECTURA.md` §1 está
   cerrado; sin librería de UI, a propósito.

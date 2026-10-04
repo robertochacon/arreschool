@@ -14,7 +14,9 @@
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
-    "types:gen": "supabase gen types typescript --local > src/types/supabase.ts"
+    "types:gen": "supabase gen types typescript --local > src/types/supabase.ts",
+    "test:db": "node supabase/tests/isolation.test.mjs",
+    "db:check": "node supabase/tests/migrate.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -32,6 +34,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
