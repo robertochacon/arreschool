@@ -47,11 +47,7 @@ export function AuthLayout({
   showLegal?: boolean
 }) {
   return (
-    // `pb-32`/`sm:pb-40`: reserva el alto del libro del fondo para que la
-    // tarjeta y los enlaces legales nunca queden encima del dibujo.
-    // `overflow-hidden`: el SVG mide el 100% del ancho y no debe crear scroll.
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-brand-50 via-white to-white px-4 pb-32 pt-16 sm:pb-40">
-      <OpenBookBackdrop />
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-gradient-to-b from-brand-50 via-white to-white px-4 pb-10 pt-16">
       {backToHome && (
         <Link
           to="/"
@@ -64,7 +60,7 @@ export function AuthLayout({
 
       {showSignOut && <SignOutButton />}
 
-      <div className="relative z-10 w-full max-w-md">
+      <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
           <BrandLogo className="h-28 w-auto sm:h-32" />
           <p className="mt-1 text-sm font-medium text-brand-500">{APP_TAGLINE}</p>
@@ -93,47 +89,6 @@ export function AuthLayout({
         )}
       </div>
     </div>
-  )
-}
-
-/**
- * Fondo del pie: el LIBRO ABIERTO del emblema en versión mínima (página cielo a
- * la izquierda, verde hoja a la derecha, lomo en el centro). Tintes muy suaves y
- * un trazo fino: acompaña sin competir con el formulario, que es lo único que
- * importa en estas pantallas. Es el mismo motivo que cierra el hero de la landing,
- * así que pasar de una a otra se siente como la misma casa.
- *
- * `preserveAspectRatio="none"` estira el dibujo a lo ancho sin deformar su alto;
- * `aria-hidden` porque es pura decoración.
- */
-function OpenBookBackdrop() {
-  return (
-    <svg
-      viewBox="0 0 1440 160"
-      preserveAspectRatio="none"
-      aria-hidden
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-28 w-full sm:h-36"
-    >
-      <path d="M0 64 C 290 28, 560 44, 720 146 L 720 160 L 0 160 Z" className="fill-arre-sky/15" />
-      <path d="M0 100 C 300 76, 560 92, 720 156 L 720 160 L 0 160 Z" className="fill-brand-600/10" />
-      <path d="M1440 64 C 1150 28, 880 44, 720 146 L 720 160 L 1440 160 Z" className="fill-arre-leaf/20" />
-      <path d="M1440 100 C 1140 76, 880 92, 720 156 L 720 160 L 1440 160 Z" className="fill-arre-leaf-deep/10" />
-      {/* Borde de cada página: el trazo que dibuja el libro. */}
-      <path
-        d="M0 64 C 290 28, 560 44, 720 146"
-        fill="none"
-        strokeWidth="2"
-        vectorEffect="non-scaling-stroke"
-        className="stroke-arre-sky/50"
-      />
-      <path
-        d="M1440 64 C 1150 28, 880 44, 720 146"
-        fill="none"
-        strokeWidth="2"
-        vectorEffect="non-scaling-stroke"
-        className="stroke-arre-leaf/60"
-      />
-    </svg>
   )
 }
 
