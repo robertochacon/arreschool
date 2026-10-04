@@ -1,8 +1,9 @@
 // Plantilla del correo de bienvenida.
 //
-// HTML con estilos EN LÍNEA y maquetado con <table>, igual que las plantillas
-// de supabase/templates: los clientes de correo no cargan hojas de estilo y
-// varios (Outlook el primero) siguen sin soportar flex ni grid.
+// Misma maqueta que las plantillas de supabase/templates (las genera el mismo
+// diseño: logo arriba, franja azul/verde del libro, botón en el azul del logo).
+// HTML con estilos EN LÍNEA y maquetado con <table>: los clientes de correo no
+// cargan hojas de estilo y varios (Outlook el primero) no soportan flex ni grid.
 //
 // No lleva enlaces con token ni pide confirmar nada: la cuenta ya está activa.
 
@@ -23,50 +24,85 @@ export function welcomeEmail({ name, siteUrl }: { name: string; siteUrl: string 
   const firstName = escapeHtml(name.split(' ')[0] ?? '')
   // Fórmula neutra en género: no sabemos quién está al otro lado.
   const hello = firstName ? `¡Te damos la bienvenida, ${firstName}!` : '¡Te damos la bienvenida!'
+  // Sin barra final (la quita index.ts): el logo vive en <sitio>/email/.
   const site = escapeHtml(siteUrl)
 
   return {
     subject: '¡Te damos la bienvenida a ArreSchool!',
     html: `<!doctype html>
 <html lang="es">
-  <body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 12px;">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>Te damos la bienvenida a ArreSchool</title>
+  </head>
+  <body style="margin:0;padding:0;background:#eef7fe;">
+    <!-- Texto de vista previa (lo que se lee junto al asunto en la bandeja). -->
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Tu cuenta está lista: estos son los primeros pasos.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef7fe;">
       <tr>
-        <td align="center">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(23,37,84,0.08);">
+        <td align="center" style="padding:28px 12px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #d6ecfc;">
             <tr>
-              <td style="background:#0e2a5c;padding:26px;text-align:center;">
-                <span style="color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">ArreSchool</span>
-                <div style="color:#93c5fd;font-size:12px;margin-top:4px;">Gestión escolar sencilla</div>
+              <td align="center" style="padding:28px 28px 22px;">
+                <a href="${site}" target="_blank" style="text-decoration:none;">
+                  <img src="${site}/email/arreschool-logo.png" width="200" alt="ArreSchool" style="display:block;width:200px;max-width:100%;height:auto;border:0;outline:none;" />
+                </a>
+              </td>
+            </tr>
+            <!-- Franja del libro abierto del logo: página azul y página verde. -->
+            <tr>
+              <td style="padding:0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td width="50%" height="6" bgcolor="#1e9be8" style="background:#1e9be8;font-size:0;line-height:0;">&nbsp;</td>
+                    <td width="50%" height="6" bgcolor="#45b649" style="background:#45b649;font-size:0;line-height:0;">&nbsp;</td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
-              <td style="padding:32px 28px;">
-                <h1 style="margin:0 0 12px;font-size:20px;color:#0e2a5c;">${hello}</h1>
-                <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#334155;">
-                  Tu cuenta ya está lista: no tienes que confirmar nada. Entra y
-                  empieza a llevar tu colegio sin cuadernos ni hojas de cálculo.
-                </p>
-                <ul style="margin:0 0 22px;padding-left:20px;font-size:15px;line-height:1.8;color:#334155;">
-                  <li>Crea tu colegio, el año escolar, los grados y las secciones.</li>
-                  <li>Registra a tus estudiantes con su familia e inscríbelos.</li>
-                  <li>Invita a docentes, secretaría y finanzas: cada quien ve lo suyo.</li>
-                </ul>
-                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 22px;">
+              <td style="padding:34px 32px 4px;">
+                <h1 style="margin:0 0 14px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:24px;line-height:1.25;font-weight:800;color:#0e2a5c;">${hello}</h1>
+                <p style="margin:0 0 14px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#334155;">Tu cuenta ya está lista. Estos son los primeros pasos para dejar tu colegio en orden:</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 4px;">
                   <tr>
-                    <td style="border-radius:12px;background:#0b4aa8;">
-                      <a href="${site}" style="display:inline-block;padding:14px 30px;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:12px;">Entrar a ArreSchool</a>
+                    <td valign="top" style="padding:0 12px 12px 0;"><span style="display:inline-block;width:28px;height:28px;border-radius:999px;background:#14b3a3;color:#ffffff;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;line-height:28px;text-align:center;">1</span></td>
+                    <td valign="top" style="padding:3px 0 12px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#334155;">Crea el año escolar, los grados y las secciones.</td>
+                  </tr>
+                  <tr>
+                    <td valign="top" style="padding:0 12px 12px 0;"><span style="display:inline-block;width:28px;height:28px;border-radius:999px;background:#0b4aa8;color:#ffffff;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;line-height:28px;text-align:center;">2</span></td>
+                    <td valign="top" style="padding:3px 0 12px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#334155;">Registra a los niños con su familia, sus alergias y quién los recoge.</td>
+                  </tr>
+                  <tr>
+                    <td valign="top" style="padding:0 12px 12px 0;"><span style="display:inline-block;width:28px;height:28px;border-radius:999px;background:#c46a00;color:#ffffff;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;line-height:28px;text-align:center;">3</span></td>
+                    <td valign="top" style="padding:3px 0 12px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#334155;">Invita a tus maestras: cada una pasa lista y evalúa solo su sección.</td>
+                  </tr>
+                  <tr>
+                    <td valign="top" style="padding:0 12px 12px 0;"><span style="display:inline-block;width:28px;height:28px;border-radius:999px;background:#2e8a35;color:#ffffff;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;line-height:28px;text-align:center;">4</span></td>
+                    <td valign="top" style="padding:3px 0 12px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#334155;">Genera las mensualidades y cobra con recibo numerado.</td>
+                  </tr>
+                  </table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px auto 4px;">
+                  <tr>
+                    <td align="center" bgcolor="#0b4aa8" style="border-radius:999px;background:#0b4aa8;">
+                      <a href="${site}" target="_blank" style="display:inline-block;padding:15px 34px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1.2;color:#ffffff;text-decoration:none;border-radius:999px;">Entrar a ArreSchool</a>
                     </td>
                   </tr>
                 </table>
-                <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5;">
-                  ¿Alguna duda? Responde a este correo y te echamos una mano.
-                </p>
               </td>
             </tr>
             <tr>
-              <td style="padding:16px 28px;background:#f8fafc;text-align:center;border-top:1px solid #e2e8f0;">
-                <span style="font-size:12px;color:#94a3b8;">ArreSchool · Gestión escolar sencilla</span>
+              <td style="padding:22px 32px 30px;">
+                <p style="margin:18px 0 0;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#64748b;">¿Alguna duda? Responde a este correo y te echamos una mano.</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:22px 28px;background:#f4faff;border-top:1px solid #d6ecfc;">
+                <div style="margin:0 0 10px;font-size:0;line-height:0;"><span style="display:inline-block;width:10px;height:10px;margin:0 3px;border-radius:999px;background:#14b3a3;"></span><span style="display:inline-block;width:10px;height:10px;margin:0 3px;border-radius:999px;background:#1e9be8;"></span><span style="display:inline-block;width:10px;height:10px;margin:0 3px;border-radius:999px;background:#f7931e;"></span><span style="display:inline-block;width:10px;height:10px;margin:0 3px;border-radius:999px;background:#45b649;"></span></div>
+                <p style="margin:0;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#0e2a5c;font-weight:700;">ArreSchool, tu colegio en orden.</p>
+                <p style="margin:6px 0 0;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:#64748b;">Recibes este correo porque creaste una cuenta en ArreSchool.</p>
               </td>
             </tr>
           </table>
@@ -74,6 +110,7 @@ export function welcomeEmail({ name, siteUrl }: { name: string; siteUrl: string 
       </tr>
     </table>
   </body>
-</html>`,
+</html>
+`,
   }
 }

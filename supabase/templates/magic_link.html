@@ -1,47 +1,68 @@
 <!doctype html>
 <!--
-  ArreSchool · Enlace de acceso sin contraseña (GoTrue: "magic_link").
-  El starter no ofrece este método en la interfaz, pero la plantilla se declara
-  igual: sin ella GoTrue usaría su HTML por defecto, en inglés y sin marca, el
-  día que alguien active `signInWithOtp`.
-  Variables: {{ .ConfirmationURL }}, {{ .Token }}, {{ .SiteURL }}, {{ .Email }}.
+  ArreSchool · Enlace de acceso sin contraseña (GoTrue "magic_link").
+  Variables: {{ .ConfirmationURL }}, {{ .Email }}, {{ .SiteURL }}.
+  Diseño común a todos los correos (colores del logo, tablas y estilos en
+  línea para Gmail/Outlook). El logo se sirve desde {{ .SiteURL }}email/,
+  así que site_url en supabase/config.toml TIENE que terminar en "/".
+  Se aplica al proyecto con la API de gestión o con `supabase config push`.
 -->
 <html lang="es">
-  <body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 12px;">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>Entra a ArreSchool</title>
+  </head>
+  <body style="margin:0;padding:0;background:#eef7fe;">
+    <!-- Texto de vista previa (lo que se lee junto al asunto en la bandeja). -->
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Tu enlace de acceso a ArreSchool, válido por una hora.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef7fe;">
       <tr>
-        <td align="center">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(23,37,84,0.08);">
+        <td align="center" style="padding:28px 12px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #d6ecfc;">
             <tr>
-              <td style="background:#0e2a5c;padding:26px;text-align:center;">
-                <span style="color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">ArreSchool</span>
-                <div style="color:#93c5fd;font-size:12px;margin-top:4px;">Gestión escolar sencilla</div>
+              <td align="center" style="padding:28px 28px 22px;">
+                <a href="{{ .SiteURL }}" target="_blank" style="text-decoration:none;">
+                  <img src="{{ .SiteURL }}email/arreschool-logo.png" width="200" alt="ArreSchool" style="display:block;width:200px;max-width:100%;height:auto;border:0;outline:none;" />
+                </a>
+              </td>
+            </tr>
+            <!-- Franja del libro abierto del logo: página azul y página verde. -->
+            <tr>
+              <td style="padding:0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td width="50%" height="6" bgcolor="#1e9be8" style="background:#1e9be8;font-size:0;line-height:0;">&nbsp;</td>
+                    <td width="50%" height="6" bgcolor="#45b649" style="background:#45b649;font-size:0;line-height:0;">&nbsp;</td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
-              <td style="padding:32px 28px;">
-                <h1 style="margin:0 0 12px;font-size:20px;color:#0e2a5c;">Tu enlace de acceso</h1>
-                <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#334155;">
-                  Pulsa para entrar en ArreSchool. No hace falta contraseña.
-                </p>
-                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 22px;">
+              <td style="padding:34px 32px 4px;">
+                <h1 style="margin:0 0 14px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:24px;line-height:1.25;font-weight:800;color:#0e2a5c;">Entra a ArreSchool</h1>
+                <p style="margin:0 0 14px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#334155;">Pediste entrar a ArreSchool con <strong style="color:#0e2a5c;">{{ .Email }}</strong>. No hace falta contraseña: toca el botón.</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px auto 4px;">
                   <tr>
-                    <td style="border-radius:12px;background:#0b4aa8;">
-                      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 30px;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:12px;">Iniciar sesión</a>
+                    <td align="center" bgcolor="#0b4aa8" style="border-radius:999px;background:#0b4aa8;">
+                      <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:15px 34px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1.2;color:#ffffff;text-decoration:none;border-radius:999px;">Entrar ahora</a>
                     </td>
                   </tr>
                 </table>
-                <p style="margin:0 0 8px;font-size:13px;color:#64748b;">O usa este código:</p>
-                <div style="font-size:26px;font-weight:800;letter-spacing:6px;color:#0e2a5c;background:#eef7fe;border-radius:10px;padding:14px;text-align:center;">{{ .Token }}</div>
-                <p style="margin:22px 0 0;font-size:12px;color:#94a3b8;line-height:1.5;">
-                  Si no pediste este acceso, ignora el correo. El enlace caduca en
-                  una hora y solo sirve una vez.
-                </p>
               </td>
             </tr>
             <tr>
-              <td style="padding:16px 28px;background:#f8fafc;text-align:center;border-top:1px solid #e2e8f0;">
-                <span style="font-size:12px;color:#94a3b8;">ArreSchool · Gestión escolar sencilla</span>
+              <td style="padding:22px 32px 30px;">
+                <p style="margin:0 0 6px;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#64748b;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+                <p style="margin:0;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;word-break:break-all;"><a href="{{ .ConfirmationURL }}" target="_blank" style="color:#1474d0;text-decoration:underline;">{{ .ConfirmationURL }}</a></p><p style="margin:18px 0 0;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#64748b;">El enlace vence en una hora y sirve una sola vez. Si no lo pediste tú, ignora este correo.</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:22px 28px;background:#f4faff;border-top:1px solid #d6ecfc;">
+                <div style="margin:0 0 10px;font-size:0;line-height:0;"><span style="display:inline-block;width:10px;height:10px;margin:0 3px;border-radius:999px;background:#14b3a3;"></span><span style="display:inline-block;width:10px;height:10px;margin:0 3px;border-radius:999px;background:#1e9be8;"></span><span style="display:inline-block;width:10px;height:10px;margin:0 3px;border-radius:999px;background:#f7931e;"></span><span style="display:inline-block;width:10px;height:10px;margin:0 3px;border-radius:999px;background:#45b649;"></span></div>
+                <p style="margin:0;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#0e2a5c;font-weight:700;">ArreSchool, tu colegio en orden.</p>
+                <p style="margin:6px 0 0;font-family:'Nunito','Segoe UI',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:#64748b;">Recibes este correo porque alguien usó esta dirección en ArreSchool.</p>
               </td>
             </tr>
           </table>
