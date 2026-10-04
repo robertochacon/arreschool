@@ -106,9 +106,11 @@ sender_name = "ArreSchool"
 
 # Plantillas de correo con la marca ArreSchool (logo y colores del logo).
 # Las seis comparten maqueta; el logo se sirve desde {{ .SiteURL }}email/, por
-# eso site_url (arriba) TIENE que terminar en "/". Ya están aplicadas al
-# proyecto con la API de gestión (solo asuntos y contenidos), así que un
-# `config push` futuro no las cambia.
+# eso site_url (arriba) TIENE que terminar en "/".
+# PENDIENTE de aplicar: Supabase NO deja personalizar plantillas en el plan
+# gratis con su remitente por defecto. Primero hay que activar el SMTP de
+# Resend (dominio verificado); después se aplican con la API de gestión
+# (mailer_subjects_* / mailer_templates_*_content) o con `config push`.
 [auth.email.template.confirmation]
 subject = "Confirma tu correo para empezar en ArreSchool"
 content_path = "./supabase/templates/confirmation.html"
