@@ -21,6 +21,17 @@ export default {
           900: '#1e3a8a',
           950: '#172554',
         },
+        // Colores del LOGO de ArreSchool, con nombre propio. Los usa la landing
+        // (que habla el idioma visual de la marca); la app sigue con brand/accent.
+        arre: {
+          ink: '#0E2A5C', // texto: el navy del birrete, oscurecido para leer
+          navy: '#0B4AA8', // birrete y «Arre»
+          sky: '#1E9BE8', // «School» y la página izquierda del libro
+          teal: '#14B3A3', // el niño de la izquierda
+          orange: '#F7931E', // el niño de la derecha y la borla
+          leaf: '#45B649', // la página derecha del libro
+          paper: '#F4FAFF', // fondo: blanco con un punto de cielo
+        },
         // Ámbar de apoyo: avisos, destacados y el plan recomendado.
         accent: {
           50: '#fffbeb',
@@ -47,6 +58,10 @@ export default {
           'Arial',
           'sans-serif',
         ],
+        // Solo la landing: Fredoka (títulos, redondeada como el logotipo) y
+        // Nunito (texto). La app sigue en Inter, que rinde mejor en tablas densas.
+        display: ['Fredoka', 'Nunito', 'system-ui', 'sans-serif'],
+        rounded: ['Nunito', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },
       boxShadow: {
         // Sombras tintadas con el navy de la marca en vez de negro puro: sobre
@@ -67,10 +82,18 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        // Casilleros del hero de la landing: aparecen como etiquetas pegadas.
+        'pop-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px) scale(0.94) rotate(-1.5deg)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1) rotate(0)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.2s ease-out',
         'slide-up': 'slide-up 0.25s ease-out',
+        // `backwards`: invisible durante su retraso escalonado, sin dejar la
+        // opacidad a 0 si el navegador no anima (motion-safe lo aplica).
+        'pop-in': 'pop-in 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.15) backwards',
       },
     },
   },
