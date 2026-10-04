@@ -1,22 +1,46 @@
+import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/cn'
 
 /**
- * Selector de una sola opción, con los botones a la vista (un estado, un rango
- * de fechas…). Se usa donde un `<select>` escondería justo lo que hay que
- * comparar: con tres o cuatro opciones cortas, verlas todas ahorra un toque.
+ * Selector de una sola opción con las opciones a la vista. Dos aspectos:
  *
- * MÓVIL: el número de columnas depende de cuántas opciones haya. En un teléfono
- * de 360px, cuatro botones en línea dejan 78px cada uno y una palabra media ya
- * se corta; por eso se parten en dos filas y solo se estiran a partir de `sm`.
+ * `tabs` (por omisión) — pestañas con subrayado. Es lo que usan las pantallas
+ *   para cambiar de sección (Finanzas: Por cobrar / Cargos / Pagos…) y los
+ *   filtros de las listas. Se leen como navegación, no como una fila de
+ *   botones grandes que compiten con las acciones de la página.
+ *   MÓVIL: la tira NO se parte en filas; si no cabe, se desliza de lado DENTRO
+ *   de sí misma (la página nunca gana scroll horizontal) y la pestaña activa se
+ *   desplaza sola a la vista. A 360px, cinco pestañas de una palabra caben casi
+ *   siempre; la ficha del estudiante, con «Documentos» e «Historial», no.
+ *
+ * `toggle` — interruptor compacto de dos o tres opciones DENTRO de un
+ *   formulario (p. ej. «Automático / Elegir cargos» al cobrar). Ahí unas
+ *   pestañas parecerían navegación y no un campo.
+ *
+ * `aria-pressed` y NO `role="tab"`: el patrón de pestañas le promete al lector
+ * de pantalla paneles enlazados y navegación con flechas, y aquí son botones
+ * que se pulsan uno a uno con el tabulador, así que se anuncian por lo que son.
  */
-const COLS: Record<number, string> = {
-  2: 'grid-cols-2',
-  // Tres opciones apiladas en móvil: a 360px, tres botones en línea dejan 106px
-  // cada uno, que no alcanzan para una etiqueta de dos palabras.
-  3: 'grid-cols-1 sm:grid-cols-3',
-  4: 'grid-cols-2 sm:grid-cols-4',
-  5: 'grid-cols-2 sm:grid-cols-5',
-}
+const VARIANTS = {
+  tabs: {
+    wrap: '-mx-4 overflow-x-auto px-4 no-scrollbar sm:mx-0 sm:px-0',
+    track: 'flex min-w-max gap-1 border-b border-slate-200',
+    base:
+      '-mb-px whitespace-nowrap border-b-2 px-3 pb-2.5 pt-2 text-sm font-semibold transition-colors sm:px-4 sm:text-[15px] ' +
+      'rounded-t-lg focus:outline-none focus-visible:bg-brand-50',
+    on: 'border-brand-600 text-brand-700',
+    off: 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-800',
+  },
+  toggle: {
+    wrap: '',
+    track: 'inline-flex w-full gap-1 rounded-xl bg-slate-100 p-1',
+    base:
+      'flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition-colors ' +
+      'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40',
+    on: 'bg-white text-brand-700 shadow-sm',
+    off: 'text-slate-500 hover:text-slate-800',
+  },
+} as const
 
 export function Segmented<T extends string>({
   value,
@@ -24,6 +48,7 @@ export function Segmented<T extends string>({
   options,
   label,
   className,
+  variant = 'tabs',
 }: {
   value: T
   onChange: (value: T) => void
@@ -31,38 +56,46 @@ export function Segmented<T extends string>({
   /** Nombre del grupo, para lectores de pantalla. */
   label?: string
   className?: string
+  variant?: keyof typeof VARIANTS
 }) {
+  const v = VARIANTS[variant]
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const activeRef = useRef<HTMLButtonElement>(null)
+
+  // En el teléfono la tira puede ser más ancha que la pantalla: al cambiar de
+  // pestaña (o al abrir en una que quedó fuera, p. ej. desde ?tab= en la URL)
+  // se desliza la TIRA hasta la activa. A mano y no con `scrollIntoView`, que
+  // también movería la página en vertical si la tira no está a la vista.
+  useEffect(() => {
+    const wrap = wrapRef.current
+    const el = activeRef.current
+    if (variant !== 'tabs' || !wrap || !el) return
+    const left = el.offsetLeft - wrap.offsetLeft
+    const right = left + el.offsetWidth
+    if (left < wrap.scrollLeft || right > wrap.scrollLeft + wrap.clientWidth) {
+      wrap.scrollTo({ left: Math.max(0, left - 16), behavior: 'smooth' })
+    }
+  }, [value, variant])
+
   return (
-    <div
-      role="group"
-      aria-label={label}
-      className={cn('grid gap-2', COLS[options.length] ?? 'grid-cols-2 sm:grid-cols-3', className)}
-    >
-      {options.map((o) => {
-        const active = o.value === value
-        return (
-          <button
-            key={o.value}
-            type="button"
-            /* `aria-pressed` y NO `role="radio"`: un grupo de radios le promete al
-               lector de pantalla que las flechas cambian la opción, y eso exige
-               mover el foco a mano (tabIndex móvil + onKeyDown). Estos son
-               botones que se pulsan uno a uno con el tabulador, así que se
-               anuncian por lo que son. */
-            aria-pressed={active}
-            onClick={() => onChange(o.value)}
-            className={cn(
-              'h-11 truncate rounded-xl px-3 text-sm font-semibold transition-colors',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40',
-              active
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
-            )}
-          >
-            {o.label}
-          </button>
-        )
-      })}
+    <div ref={wrapRef} className={cn(v.wrap, className)}>
+      <div role="group" aria-label={label} className={v.track}>
+        {options.map((o) => {
+          const active = o.value === value
+          return (
+            <button
+              key={o.value}
+              ref={active ? activeRef : undefined}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(o.value)}
+              className={cn(v.base, active ? v.on : v.off)}
+            >
+              {o.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

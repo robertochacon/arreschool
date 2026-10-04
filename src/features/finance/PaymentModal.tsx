@@ -333,6 +333,7 @@ export function PaymentModal({
             error={manualError ?? undefined}
           >
             <Segmented
+              variant="toggle"
               value={mode}
               onChange={setMode}
               label="Cómo aplicar el pago"
